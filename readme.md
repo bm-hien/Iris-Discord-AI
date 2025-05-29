@@ -30,6 +30,9 @@
 - 🎨 **Media Processing** - Image and video analysis with AI vision capabilities
 
 ---
+## 🚀 Demo
+
+---
 
 ## 🎯 Key Features
 
