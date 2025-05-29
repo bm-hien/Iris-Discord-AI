@@ -6,11 +6,11 @@ async function executeBan(message, command) {
   
   const member = await findMember(guild, target);
   if (!member) {
-    return `Không tìm thấy thành viên: ${target}`;
+    return `Member not found: ${target}`;
   }
   
   const banOptions = {
-    reason: reason || 'Không có lý do'
+    reason: reason || 'No reason provided'
   };
   
   // If duration is specified, add days option
@@ -23,10 +23,10 @@ async function executeBan(message, command) {
   
   try {
     await member.ban(banOptions);
-    return `Đã ban ${member.user.username} khỏi server.`;
+    return `Successfully banned ${member.user.username} from the server.`;
   } catch (error) {
     console.error('Error banning member:', error);
-    return 'Không thể ban thành viên. Vui lòng kiểm tra quyền của bot.';
+    return 'Cannot ban member. Please check bot permissions.';
   }
 }
 

@@ -9,21 +9,21 @@ async function executeUnlock(message, command) {
     try {
       targetChannel = await message.guild.channels.fetch(channel_id);
       if (!targetChannel) {
-        return `Không tìm thấy channel với ID: ${channel_id}`;
+        return `Channel not found with ID: ${channel_id}`;
       }
       
       // Check if it's a text channel that can be unlocked
       if (!targetChannel.isTextBased()) {
-        return `Channel **${targetChannel.name}** không phải là text channel và không thể mở khóa.`;
+        return `Channel **${targetChannel.name}** is not a text channel and cannot be unlocked.`;
       }
     } catch (error) {
       console.error('Error fetching target channel:', error);
-      return `Không thể tìm thấy channel với ID: ${channel_id}`;
+      return `Cannot find channel with ID: ${channel_id}`;
     }
   }
   
   if (!targetChannel.guild) {
-    return 'Không thể mở khóa channel DM.';
+    return 'Cannot unlock DM channels.';
   }
   
   try {
@@ -40,13 +40,13 @@ async function executeUnlock(message, command) {
     
     // Different messages for current vs specific channel
     if (channel_id && targetChannel.id !== message.channel.id) {
-      return `🔓 Đã mở khóa kênh **#${targetChannel.name}** (ID: ${targetChannel.id}). Thành viên có thể gửi tin nhắn trở lại.`;
+      return `🔓 Successfully unlocked channel **#${targetChannel.name}** (ID: ${targetChannel.id}). Members can send messages again.`;
     } else {
-      return `🔓 Đã mở khóa kênh **#${targetChannel.name}**. Thành viên có thể gửi tin nhắn trở lại.`;
+      return `🔓 Successfully unlocked channel **#${targetChannel.name}**. Members can send messages again.`;
     }
   } catch (error) {
     console.error('Error unlocking channel:', error);
-    return 'Không thể mở khóa channel. Vui lòng kiểm tra quyền của bot.';
+    return 'Cannot unlock channel. Please check bot permissions.';
   }
 }
 

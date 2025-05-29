@@ -97,7 +97,6 @@ function getUserInfo(message) {
       userInfo.presence = extractUserPresence(member);
       
       // Log the raw permissions bitfield for debugging
-      console.log(`${member.user.username} permissions bitfield:`, member.permissions.bitfield);
     }
   } else {
     // For DM channels, try to get presence from client cache

@@ -6,15 +6,15 @@ async function executeUnmute(message, command) {
   
   const member = await findMember(guild, target);
   if (!member) {
-    return `Không tìm thấy thành viên: ${target}`;
+    return `Member not found: ${target}`;
   }
   
   try {
     await member.timeout(null);
-    return `Đã bỏ hạn chế quyền chat cho ${member.user.username}.`;
+    return `Successfully unmuted ${member.user.username}.`;
   } catch (error) {
     console.error('Error unmuting member:', error);
-    return 'Không thể unmute thành viên. Vui lòng kiểm tra quyền của bot.';
+    return 'Cannot unmute member. Please check bot permissions.';
   }
 }
 

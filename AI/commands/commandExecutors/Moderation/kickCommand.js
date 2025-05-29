@@ -6,15 +6,15 @@ async function executeKick(message, command) {
   
   const member = await findMember(guild, target);
   if (!member) {
-    return `Không tìm thấy thành viên: ${target}`;
+    return `Member not found: ${target}`;
   }
   
   try {
-    await member.kick(reason || 'Không có lý do');
-    return `Đã kick ${member.user.username} khỏi server.`;
+    await member.kick(reason || 'No reason provided');
+    return `Successfully kicked ${member.user.username} from the server.`;
   } catch (error) {
     console.error('Error kicking member:', error);
-    return 'Không thể kick thành viên. Vui lòng kiểm tra quyền của bot.';
+    return 'Cannot kick member. Please check bot permissions.';
   }
 }
 

@@ -1,18 +1,15 @@
 /**
- * Kiểm tra quyền hạn của người dùng
+ * Check user permissions
  */
 const { PermissionsBitField } = require('discord.js');
 
 /**
- * Kiểm tra và trả về danh sách quyền quản trị của thành viên
+ * Check and return list of member's administrative permissions
  * @param {Object} member - Discord.js GuildMember
- * @returns {Array} Danh sách tên quyền hạn
+ * @returns {Array} List of permission names
  */
 function checkUserPermissions(member) {
   if (!member) return [];
-  
-  // Log raw bitfield for debugging
-  console.log(`${member.user.username} permissions bitfield:`, member.permissions.bitfield);
   
   // Define permissions to check with proper flags
   const permissionsToCheck = [
@@ -20,18 +17,15 @@ function checkUserPermissions(member) {
     { flag: PermissionsBitField.Flags.KickMembers, name: 'Kick Members' },
     { flag: PermissionsBitField.Flags.BanMembers, name: 'Ban Members' },
     { flag: PermissionsBitField.Flags.ManageMessages, name: 'Manage Messages' },
+    { flag: PermissionsBitField.Flags.ManageChannels, name: 'Manage Channels' },
     { flag: PermissionsBitField.Flags.Administrator, name: 'Administrator' }
   ];
   
   const userPerms = [];
   
-  // Enhanced debugging to see exact permission values
+  // Check permissions without spam logging
   for (const perm of permissionsToCheck) {
-    const hasPermission = member.permissions.has(perm.flag);
-    
-    console.log(`Checking ${perm.name} (${perm.flag}): ${hasPermission}`);
-    
-    if (hasPermission) {
+    if (member.permissions.has(perm.flag)) {
       userPerms.push(perm.name);
     }
   }

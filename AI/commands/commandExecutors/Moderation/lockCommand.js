@@ -9,21 +9,21 @@ async function executeLock(message, command) {
     try {
       targetChannel = await message.guild.channels.fetch(channel_id);
       if (!targetChannel) {
-        return `Không tìm thấy channel với ID: ${channel_id}`;
+        return `Channel not found with ID: ${channel_id}`;
       }
       
       // Check if it's a text channel that can be locked
       if (!targetChannel.isTextBased()) {
-        return `Channel **${targetChannel.name}** không phải là text channel và không thể khóa.`;
+        return `Channel **${targetChannel.name}** is not a text channel and cannot be locked.`;
       }
     } catch (error) {
       console.error('Error fetching target channel:', error);
-      return `Không thể tìm thấy channel với ID: ${channel_id}`;
+      return `Cannot find channel with ID: ${channel_id}`;
     }
   }
   
   if (!targetChannel.guild) {
-    return 'Không thể khóa channel DM.';
+    return 'Cannot lock DM channels.';
   }
   
   try {
@@ -40,13 +40,13 @@ async function executeLock(message, command) {
     
     // Different messages for current vs specific channel
     if (channel_id && targetChannel.id !== message.channel.id) {
-      return `🔒 Đã khóa kênh **#${targetChannel.name}** (ID: ${targetChannel.id}). Chỉ có người có quyền quản lý mới có thể gửi tin nhắn.`;
+      return `🔒 Successfully locked channel **#${targetChannel.name}** (ID: ${targetChannel.id}). Only users with manage permissions can send messages.`;
     } else {
-      return `🔒 Đã khóa kênh **#${targetChannel.name}**. Chỉ có người có quyền quản lý mới có thể gửi tin nhắn.`;
+      return `🔒 Successfully locked channel **#${targetChannel.name}**. Only users with manage permissions can send messages.`;
     }
   } catch (error) {
     console.error('Error locking channel:', error);
-    return 'Không thể khóa channel. Vui lòng kiểm tra quyền của bot.';
+    return 'Cannot lock channel. Please check bot permissions.';
   }
 }
 

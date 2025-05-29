@@ -34,7 +34,6 @@ module.exports = {
           if (repliedMessage.reference && repliedMessage.reference.messageId) {
             const originalMessageRef = await message.channel.messages.fetch(repliedMessage.reference.messageId);
             originalUserId = originalMessageRef.author.id;
-            console.log(`Using conversation history of user: ${originalUserId}`);
           }
         }
       } catch (error) {
