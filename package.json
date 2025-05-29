@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "@google/genai": "^1.0.1",
+    "discord.js": "^14.19.3",
+    "dotenv": "^16.5.0",
+    "node-fetch": "^2.7.0",
+    "openai": "^4.100.0",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7"
+  }
+}
