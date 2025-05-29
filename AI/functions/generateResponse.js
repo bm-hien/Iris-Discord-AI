@@ -1,5 +1,5 @@
 /**
- * Module xử lý phản hồi AI với Function Calling support và URL Context
+ * Module for processing AI responses with Function Calling support and URL Context
  */
 const { OpenAI } = require("openai");
 const { GoogleGenAI, Type } = require("@google/genai");
@@ -10,7 +10,7 @@ const { moderationFunctions, convertFunctionCallToCommand } = require('./functio
 const { createCodeEmbed } = require('../utilities/formatters');
 const { formatResponseForEmbed } = require('./responseFormatter');
 const { imageToBase64, videoToBase64, isVideoFile } = require('./mediaProcessor');
-const { extractUrls } = require('../utilities/urlExtractor'); // New utility
+const { extractUrls } = require('../utilities/urlExtractor');
 const { modelSupportsUrlContext } = require('../../commands/AI/model');
 const {
   addMessageToHistory,
@@ -22,7 +22,7 @@ const {
 } = require('../events/database');
 
 /**
- * Tạo phản hồi AI với Function Calling support và URL Context
+ * Generate AI response with Function Calling support and URL Context
  */
 async function generateResponse(userMessage, userId, userInfo = {}, imageAttachments = []) {
   try {
@@ -69,8 +69,7 @@ async function generateResponse(userMessage, userId, userInfo = {}, imageAttachm
     const isGeminiProvider = userProvider === 'gemini' || (!userApiKey && apiKey.startsWith("AIza"));
 
     const currentModelSupportsUrlContext = isGeminiProvider && modelSupportsUrlContext(modelToUse);
-    
-    
+
     // Extract URLs from user message for context
     const urls = extractUrls(userMessage);
     const hasUrls = urls.length > 0;
@@ -88,26 +87,26 @@ async function generateResponse(userMessage, userId, userInfo = {}, imageAttachm
     let userPermissionsText = '';
     if (userInfo.permissions) {
       if (userInfo.permissions.length === 0) {
-        userPermissionsText = `- Quyền hạn: KHÔNG CÓ QUYỀN HẠN QUẢN TRỊ`;
+        userPermissionsText = `- Permissions: NO ADMIN PERMISSIONS`;
       } else {
-        userPermissionsText = `- Quyền hạn: ${userInfo.permissions.join(', ')}`;
+        userPermissionsText = `- Permissions: ${userInfo.permissions.join(', ')}`;
       }
     }
     
     // Format user roles for role hierarchy context
     let userRolesText = '';
     if (userInfo.rolePositions) {
-      userRolesText = `- Vai trò cao nhất: ${userInfo.highestRole || 'Không có'} (vị trí: ${userInfo.rolePositions.highest || '0'})\n`;
-      userRolesText += `- Vai trò thấp nhất: ${userInfo.lowestRole || '@everyone'} (vị trí: ${userInfo.rolePositions.lowest || '0'})`;
+      userRolesText = `- Highest role: ${userInfo.highestRole || 'None'} (position: ${userInfo.rolePositions.highest || '0'})\n`;
+      userRolesText += `- Lowest role: ${userInfo.lowestRole || '@everyone'} (position: ${userInfo.rolePositions.lowest || '0'})`;
     }
     
     // Create a customized system message with user information
     let channelInfoText = '';
     if (userInfo.currentChannel) {
-      channelInfoText = `- Channel hiện tại: #${userInfo.currentChannel.name} (ID: ${userInfo.currentChannel.id})\n`;
+      channelInfoText = `- Current channel: #${userInfo.currentChannel.name} (ID: ${userInfo.currentChannel.id})\n`;
       
       if (userInfo.channels && Object.keys(userInfo.channels).length > 0) {
-        channelInfoText += `- Danh sách kênh trong server:\n`;
+        channelInfoText += `- Server channels list:\n`;
         
         // Add text channels
         if (userInfo.channels.text && userInfo.channels.text.length > 0) {
@@ -141,18 +140,18 @@ async function generateResponse(userMessage, userId, userInfo = {}, imageAttachm
       const keyType = userApiKey.startsWith('AIza') ? 'Gemini' : 
                      userApiKey.startsWith('gsk_') ? 'Groq' : 
                      userApiKey.startsWith('sk-') ? 'OpenAI' : 'Custom';
-      apiKeyStatusText = `- API Key: Người dùng đã có API key cá nhân (${keyType})\n`;
+      apiKeyStatusText = `- API Key: User has personal API key (${keyType})\n`;
     } else {
-      apiKeyStatusText = `- API Key: Người dùng CHƯA có API key cá nhân (đang dùng key mặc định)\n`;
+      apiKeyStatusText = `- API Key: User does NOT have personal API key (using default key)\n`;
     }
 
     let presenceText = '';
     if (userInfo.presence) {
       const presence = userInfo.presence;
-      presenceText = `- Trạng thái: ${presence.statusText}`;
+      presenceText = `- Status: ${presence.statusText}`;
       
       if (presence.devices.length > 0) {
-        presenceText += ` (đang dùng: ${presence.devices.join(', ')})`;
+        presenceText += ` (using: ${presence.devices.join(', ')})`;
       }
       
       if (presence.customStatus) {
@@ -160,36 +159,36 @@ async function generateResponse(userMessage, userId, userInfo = {}, imageAttachm
       }
       
       if (presence.activities.length > 0) {
-        presenceText += `\n- Hoạt động hiện tại:`;
+        presenceText += `\n- Current activities:`;
         
         for (const activity of presence.activities) {
           switch (activity.type) {
             case 0: // Playing
-              presenceText += `\n  • 🎮 Đang chơi: ${activity.name}`;
+              presenceText += `\n  • 🎮 Playing: ${activity.name}`;
               if (activity.details) presenceText += ` - ${activity.details}`;
               if (activity.state) presenceText += ` (${activity.state})`;
               break;
             case 1: // Streaming
-              presenceText += `\n  • 📺 Đang stream: ${activity.name}`;
+              presenceText += `\n  • 📺 Streaming: ${activity.name}`;
               if (activity.url) presenceText += ` - ${activity.url}`;
               break;
             case 2: // Listening
-              presenceText += `\n  • 🎵 Đang nghe: ${activity.name}`;
+              presenceText += `\n  • 🎵 Listening: ${activity.name}`;
               if (activity.details) presenceText += ` - ${activity.details}`;
-              if (activity.state) presenceText += ` bởi ${activity.state}`;
+              if (activity.state) presenceText += ` by ${activity.state}`;
               break;
             case 3: // Watching
-              presenceText += `\n  • 📽️ Đang xem: ${activity.name}`;
+              presenceText += `\n  • 📽️ Watching: ${activity.name}`;
               if (activity.details) presenceText += ` - ${activity.details}`;
               break;
             case 4: // Custom
               // Already handled above
               break;
             case 5: // Competing
-              presenceText += `\n  • 🏆 Đang thi đấu: ${activity.name}`;
+              presenceText += `\n  • 🏆 Competing: ${activity.name}`;
               break;
             default:
-              presenceText += `\n  • 💻 Đang dùng: ${activity.name}`;
+              presenceText += `\n  • 💻 Using: ${activity.name}`;
               if (activity.details) presenceText += ` - ${activity.details}`;
               break;
           }
@@ -197,7 +196,7 @@ async function generateResponse(userMessage, userId, userInfo = {}, imageAttachm
           if (activity.startedAt) {
             const duration = Math.floor((Date.now() - activity.startedAt.getTime()) / 60000);
             if (duration > 0) {
-              presenceText += ` (${duration} phút)`;
+              presenceText += ` (${duration} minutes)`;
             }
           }
         }
@@ -209,16 +208,16 @@ async function generateResponse(userMessage, userId, userInfo = {}, imageAttachm
     // Add URL context information to system message
     let urlContextText = '';
     if (hasUrls && currentModelSupportsUrlContext) {
-      urlContextText = `\n- URL Context: Tin nhắn chứa ${urls.length} URL(s), AI sẽ truy cập và phân tích nội dung\n`;
-      urlContextText += `- URLs được phát hiện: ${urls.join(', ')}\n`;
-      urlContextText += `- Model hiện tại (${modelToUse}) hỗ trợ URL context\n`;
+      urlContextText = `\n- URL Context: Message contains ${urls.length} URL(s), AI will access and analyze content\n`;
+      urlContextText += `- Detected URLs: ${urls.join(', ')}\n`;
+      urlContextText += `- Current model (${modelToUse}) supports URL context\n`;
     } else if (hasUrls && isGeminiProvider && !currentModelSupportsUrlContext) {
-      urlContextText = `\n- Cảnh báo: Phát hiện URL nhưng model hiện tại (${modelToUse}) không hỗ trợ URL context\n`;
-      urlContextText += `- Các model hỗ trợ: gemini-2.5-flash-preview-05-20, gemini-2.5-pro-preview-05-06, gemini-2.0-flash, gemini-2.0-flash-live-001\n`;
-      urlContextText += `- Sử dụng /model set để chuyển sang model hỗ trợ URL context\n`;
+      urlContextText = `\n- Warning: URLs detected but current model (${modelToUse}) doesn't support URL context\n`;
+      urlContextText += `- Supported models: gemini-2.5-flash-preview-05-20, gemini-2.5-pro-preview-05-06, gemini-2.0-flash, gemini-2.0-flash-live-001\n`;
+      urlContextText += `- Use /model set to switch to a model that supports URL context\n`;
     } else if (hasUrls && !isGeminiProvider) {
-      urlContextText = `\n- Cảnh báo: Phát hiện URL nhưng provider hiện tại (${userProvider}) không hỗ trợ URL context\n`;
-      urlContextText += `- Để sử dụng tính năng này, hãy chuyển sang Gemini provider và model hỗ trợ\n`;
+      urlContextText = `\n- Warning: URLs detected but current provider (${userProvider}) doesn't support URL context\n`;
+      urlContextText += `- To use this feature, switch to Gemini provider and supported model\n`;
     }
 
     // Create a customized system message with user information
@@ -234,51 +233,51 @@ User Information:
 ${channelInfoText}
 ${userInfo.isAdmin ? '- User is a server administrator' : '- User is NOT a server administrator'}
 ${userInfo.isOwner ? '- User is the server owner' : '- User is NOT the server owner'}
-${userInfo.roles ? `- Vai trò: ${userInfo.roles}` : '- Vai trò: Không có'}
+${userInfo.roles ? `- Roles: ${userInfo.roles}` : '- Roles: None'}
 ${userRolesText}
 ${userPermissionsText}
 ${apiKeyStatusText}
 ${presenceText}
 ${urlContextText}
 
-IMPORTANT về URL CONTEXT:
-- Khi người dùng gửi URL, bạn ${currentModelSupportsUrlContext ? 'CÓ THỂ' : 'KHÔNG THỂ'} truy cập và phân tích nội dung website
+IMPORTANT about URL CONTEXT:
+- When users send URLs, you ${currentModelSupportsUrlContext ? 'CAN' : 'CANNOT'} access and analyze website content
 ${currentModelSupportsUrlContext ? 
-  '- Hãy tóm tắt, phân tích, và trả lời câu hỏi dựa trên nội dung từ URL\n- Luôn cite nguồn khi sử dụng thông tin từ URL' :
-  '- Hãy thông báo rằng model hiện tại không hỗ trợ URL context\n- Đề xuất user chuyển sang model hỗ trợ bằng /model set'
+  '- Summarize, analyze, and answer questions based on URL content\n- Always cite sources when using information from URLs' :
+  '- Inform that current model doesn\'t support URL context\n- Suggest user switch to supported model using /model set'
 }
-- Nếu không thể truy cập URL, hãy thông báo rõ ràng
+- If cannot access URL, clearly inform the user
 
-MODELS HỖ TRỢ URL CONTEXT:
-- gemini-2.5-flash-preview-05-20 (khuyến nghị)
+SUPPORTED URL CONTEXT MODELS:
+- gemini-2.5-flash-preview-05-20 (recommended)
 - gemini-2.5-pro-preview-05-06
 - gemini-2.0-flash
 - gemini-2.0-flash-live-001
 
-IMPORTANT: Khi người dùng hỏi về API key hoặc gặp lỗi rate limit:
-- Nếu họ CHƯA có API key cá nhân, hướng dẫn họ lấy API key miễn phí
-- Nếu họ ĐÃ có API key, giúp họ kiểm tra hoặc cập nhật
-- Luôn đề xuất sử dụng API key cá nhân để có trải nghiệm tốt hơn
+IMPORTANT: When users ask about API key or encounter rate limit:
+- If they DON'T have personal API key, guide them to get free API key
+- If they ALREADY have API key, help them check or update
+- Always suggest using personal API key for better experience
 
-HƯỚNG DẪN LẤY API KEY MIỄN PHÍ:
-📌 **Google Gemini API (Khuyến nghị):**
-1. Vào https://aistudio.google.com/app/apikey
-2. Đăng nhập bằng tài khoản Google
-3. Nhấn "Create API Key" 
-4. Copy API key (bắt đầu bằng "AIza...")
-5. Dùng lệnh \`/apikey set\` để thiết lập
+FREE API KEY GUIDE:
+📌 **Google Gemini API (Recommended):**
+1. Go to https://aistudio.google.com/app/apikey
+2. Login with Google account
+3. Click "Create API Key" 
+4. Copy API key (starts with "AIza...")
+5. Use \`/apikey set\` command to setup
 
-📌 **Groq API (Nhanh, miễn phí):**
-1. Vào https://console.groq.com/keys
-2. Đăng ký tài khoản miễn phí
-3. Tạo API key mới
-4. Copy API key (bắt đầu bằng "gsk_...")
-5. Dùng lệnh \`/apikey set\` để thiết lập
+📌 **Groq API (Fast, free):**
+1. Go to https://console.groq.com/keys
+2. Create free account
+3. Generate new API key
+4. Copy API key (starts with "gsk_...")
+5. Use \`/apikey set\` command to setup
 
-IMPORTANT: KHÔNG bao giờ liệt kê các quyền hạn khi người dùng không có quyền. Kiểm tra kỹ userPermissionsText.
-IMPORTANT: CHỈ sử dụng function calling khi người dùng có đủ quyền hạn được liệt kê trong userPermissionsText.
+IMPORTANT: NEVER list permissions when user has none. Check userPermissionsText carefully.
+IMPORTANT: ONLY use function calling when user has sufficient permissions listed in userPermissionsText.
 
-Nếu có người dùng gửi hình ảnh, hãy mô tả nội dung hình ảnh một cách chi tiết bằng tiếng Việt.
+If someone sends images, describe the image content in detail in English.
 `
     };
     
@@ -343,22 +342,24 @@ Nếu có người dùng gửi hình ảnh, hãy mô tả nội dung hình ảnh
         parts: parts
       });
       
-      // Prepare config with tools
+      // Prepare config - CONFLICT RESOLUTION: Choose between URL context and function calling
       const config = {
         systemInstruction: systemInstructions,
-        tools: [{
-          functionDeclarations: moderationFunctions
-        }],
         temperature: 0.7,
         topP: 0.8,
         topK: 40,
       };
 
-      // Add URL context tool if URLs are detected
+      // IMPORTANT: Due to Gemini API limitation, we can't use both URL context and function calling
+      // Priority: URL context takes precedence when URLs are detected
       if (hasUrls && currentModelSupportsUrlContext) {
-        config.tools.push({ urlContext: {} });
-      } else if (hasUrls && !currentModelSupportsUrlContext) {
-        console.log(`URL context disabled - model ${modelToUse} does not support it`);
+        // Use URL context tool (disable function calling)
+        config.tools = [{ urlContext: {} }];
+      } else {
+        // Use function calling tool (no URL context)
+        config.tools = [{
+          functionDeclarations: moderationFunctions
+        }];
       }
       
       const result = await ai.models.generateContent({
@@ -373,26 +374,40 @@ Nếu có người dùng gửi hình ảnh, hãy mô tả nội dung hình ảnh
       // Get URL context metadata if available
       if (result.candidates?.[0]?.urlContextMetadata) {
         urlContextMetadata = result.candidates[0].urlContextMetadata;
-        console.log('URL Context Retrieved:', urlContextMetadata);
       }
       
-      // Check for function calls in Gemini response
-      if (result.functionCalls && result.functionCalls.length > 0) {
-        for (const functionCall of result.functionCalls) {
-          functionCalls.push({
-            name: functionCall.name,
-            arguments: functionCall.args
-          });
-        }
-      } else if (result.candidates?.[0]?.content?.parts) {
-        // Fallback check for function calls in candidates
-        for (const part of result.candidates[0].content.parts) {
-          if (part.functionCall) {
+      // Check for function calls in Gemini response (only if not using URL context)
+      if (!hasUrls || !currentModelSupportsUrlContext) {
+        if (result.functionCalls && result.functionCalls.length > 0) {
+          for (const functionCall of result.functionCalls) {
             functionCalls.push({
-              name: part.functionCall.name,
-              arguments: part.functionCall.args
+              name: functionCall.name,
+              arguments: functionCall.args
             });
           }
+        } else if (result.candidates?.[0]?.content?.parts) {
+          // Fallback check for function calls in candidates
+          for (const part of result.candidates[0].content.parts) {
+            if (part.functionCall) {
+              functionCalls.push({
+                name: part.functionCall.name,
+                arguments: part.functionCall.args
+              });
+            }
+          }
+        }
+      }
+      
+      // If URLs were detected but function calling was requested, inform user
+      if (hasUrls && currentModelSupportsUrlContext && !response.includes('cannot do simultaneously')) {
+        const moderationRequests = ['mute', 'kick', 'ban', 'clear', 'lock', 'unlock', 'delete'];
+        const hasModerationRequest = moderationRequests.some(req => 
+          userMessage.toLowerCase().includes(req)
+        );
+        
+        if (hasModerationRequest) {
+          response += '\n\n⚠️ **Note:** I prioritized analyzing the URLs you provided. ' +
+                     'For moderation actions, please send them in a separate message without URLs.';
         }
       }
       
@@ -411,7 +426,7 @@ Nếu có người dùng gửi hình ảnh, hãy mô tả nội dung hình ảnh
           content: row.content 
         }))
       ];
-      
+
       // Prepare the final user message with any image attachments
       let finalUserMessage = {
         role: "user",
@@ -516,26 +531,23 @@ Nếu có người dùng gửi hình ảnh, hãy mô tả nội dung hình ảnh
       const functionCall = functionCalls[0]; // Take first function call
       command = convertFunctionCallToCommand(functionCall);
       
-      console.log('Function call detected:', functionCall);
-      console.log('Converted to command:', command);
-      
       // If we have a function call but no text response, provide a default message
       if (!response || response.trim() === '') {
         switch (functionCall.name) {
           case 'moderate_member':
-            response = `Đang thực hiện ${functionCall.arguments.action} cho ${functionCall.arguments.user_id}...`;
+            response = `Executing ${functionCall.arguments.action} for ${functionCall.arguments.user_id}...`;
             break;
           case 'clear_messages':
-            response = `Đang xóa ${functionCall.arguments.amount} tin nhắn...`;
+            response = `Clearing ${functionCall.arguments.amount} messages...`;
             break;
           case 'lock_channel':
-            response = `Đang khóa channel hiện tại...`;
+            response = `Locking current channel...`;
             break;
           case 'unlock_channel':
-            response = `Đang mở khóa channel hiện tại...`;
+            response = `Unlocking current channel...`;
             break;
           default:
-            response = "Đang thực hiện hành động...";
+            response = "Executing action...";
         }
       }
     }
@@ -547,19 +559,19 @@ Nếu có người dùng gửi hình ảnh, hãy mô tả nội dung hình ảnh
     
     // Ensure response is never undefined or null
     if (!response) {
-      response = "Đã nhận được yêu cầu.";
+      response = "Request received.";
     }
     
     // Format the response for better display
     const { mainContent, codeBlocks, answerContent } = formatResponseForEmbed(response);
-    
+
     // Save assistant's response to history (save the actual response, not formatted)
     await addMessageToHistory(userId, 'assistant', response);
 
     let botName = 'bmhien AI'; // Default name
     if (systemMessageTemplate.content) {
       // Try to extract the name from the system message
-      const nameMatch = systemMessageTemplate.content.match(/trợ lý AI.*?tên (.*?),/);
+      const nameMatch = systemMessageTemplate.content.match(/AI assistant named (.*?),/);
       if (nameMatch && nameMatch[1]) {
         botName = nameMatch[1];
       }
@@ -575,7 +587,7 @@ Nếu có người dùng gửi hình ảnh, hãy mô tả nội dung hình ảnh
       .setTimestamp();
 
     // Add URL context information to footer if available
-    let footerText = `Trả lời cho ${userInfo.username || userId} • Provider: ${userProvider || 'gemini'}${functionCalls.length > 0 ? ' • Function Call' : ''}`;
+    let footerText = `Reply to ${userInfo.username || userId} • Provider: ${userProvider || 'gemini'}${functionCalls.length > 0 ? ' • Function Call' : ''}`;
     
     if (urlContextMetadata && urlContextMetadata.length > 0) {
       footerText += ` • Analyzed ${urlContextMetadata.length} URL(s)`;
@@ -594,7 +606,7 @@ Nếu có người dùng gửi hình ảnh, hãy mô tả nội dung hình ảnh
       for (let i = 0; i < urlSources.length; i++) {
         const urlData = urlSources[i];
         responseEmbed.addFields({
-          name: `🔗 Nguồn ${i + 1}`,
+          name: `🔗 Source ${i + 1}`,
           value: `[${urlData.title || 'Unknown Title'}](${urlData.url})`,
           inline: true
         });
@@ -603,7 +615,7 @@ Nếu có người dùng gửi hình ảnh, hãy mô tả nội dung hình ảnh
       // Add a field to inform about URL context limitation
       responseEmbed.addFields({
         name: '⚠️ URL Context',
-        value: `Phát hiện ${urls.length} URL nhưng model hiện tại không hỗ trợ.\nDùng \`/model set\` để chuyển sang model hỗ trợ URL context.`,
+        value: `Detected ${urls.length} URLs but current model doesn't support this.\nUse \`/model set\` to switch to a model that supports URL context.`,
         inline: false
       });
     }
@@ -635,13 +647,13 @@ Nếu có người dùng gửi hình ảnh, hãy mô tả nội dung hình ảnh
                       (error.message && error.message.includes('rate limit')) ||
                       (error.message && error.message.includes('quota exceeded'));
     
-    let errorMessage = "Xin lỗi, tôi không thể xử lý yêu cầu của bạn lúc này.";
-    let errorTitle = '❌ Lỗi';
+    let errorMessage = "Sorry, I cannot process your request at this time.";
+    let errorTitle = '❌ Error';
     let errorColor = 0xFF0000;
     
     if (isRateLimit && !await getUserApiKey(userId)) {
       errorTitle = '⚠️ API Rate Limit';
-      errorMessage = "Bot đang bị giới hạn tốc độ API. Vui lòng thử lại sau hoặc sử dụng API key cá nhân của bạn bằng lệnh `/apikey set`.";
+      errorMessage = "Bot is rate limited. Please try again later or use your personal API key with `/apikey set` command.";
       errorColor = 0xFFAA00;
     }
     

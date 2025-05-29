@@ -50,16 +50,16 @@ function hasPermission(member, command) {
 function checkRoleHierarchy(executor, target) {
   // If target doesn't exist or is the same as executor
   if (!target) {
-    return { success: false, message: 'Không tìm thấy thành viên mục tiêu.' };
+    return { success: false, message: 'Target member not found.' };
   }
   
   if (target.id === executor.id) {
-    return { success: false, message: 'Bạn không thể thực hiện lệnh này với chính mình.' };
+    return { success: false, message: 'You cannot perform this command on yourself.' };
   }
   
   // If target is the server owner
   if (target.id === executor.guild.ownerId) {
-    return { success: false, message: 'Không thể thực hiện lệnh này với chủ sở hữu server.' };
+    return { success: false, message: 'Cannot perform this command on the server owner.' };
   }
   
   // If executor is the server owner, they can do anything
@@ -90,29 +90,20 @@ async function handleCommand(message, command) {
   
   const member = message.member;
   
-  // Debug log to see what permissions the member actually has
-  console.log(`Checking permissions for ${member.user.username}:`, {
-    ModerateMembers: member.permissions.has(PermissionsBitField.Flags.ModerateMembers),
-    KickMembers: member.permissions.has(PermissionsBitField.Flags.KickMembers),
-    BanMembers: member.permissions.has(PermissionsBitField.Flags.BanMembers),
-    ManageMessages: member.permissions.has(PermissionsBitField.Flags.ManageMessages),
-    ManageChannels: member.permissions.has(PermissionsBitField.Flags.ManageChannels),
-    Administrator: member.permissions.has(PermissionsBitField.Flags.Administrator)
-  });
   
   // Check if user has permission to execute the specific command
-  if (!hasPermission(member, command)) {
+  if (!hasPermission) {
     return {
       embed: new EmbedBuilder()
         .setColor(0xFF0000)
-        .setTitle('❌ Lỗi Quyền Hạn')
-        .setDescription(`Bạn không có quyền thực hiện lệnh **${command.function}**.`)
+        .setTitle('❌ Permission Error')
+        .setDescription(`You don't have permission to execute the **${command.function}** command.`)
         .addFields(
-          { name: 'Quyền hạn cần thiết', value: getRequiredPermissionName(command.function), inline: true }
+          { name: 'Required Permission', value: getRequiredPermissionName(command.function), inline: true }
         )
         .setTimestamp()
         .setFooter({ text: 'bmhien AI Moderation' }),
-      text: `Bạn không có quyền thực hiện lệnh ${command.function}.`
+      text: `You don't have permission to execute the ${command.function} command.`
     };
   }
   
@@ -146,12 +137,12 @@ async function handleCommand(message, command) {
           return {
             embed: new EmbedBuilder()
               .setColor(0xFF0000)
-              .setTitle('❌ Lỗi Phân Cấp Vai Trò')
+              .setTitle('❌ Role Hierarchy Error')
               .setDescription(hierarchyCheck.message)
               .addFields(
-                { name: 'Người dùng mục tiêu', value: targetMember.user.username, inline: true },
-                { name: 'Vai trò cao nhất của bạn', value: member.roles.highest.name, inline: true },
-                { name: 'Vai trò cao nhất của mục tiêu', value: targetMember.roles.highest.name, inline: true }
+                { name: 'Target User', value: targetMember.user.username, inline: true },
+                { name: 'Your Highest Role', value: member.roles.highest.name, inline: true },
+                { name: 'Target\'s Highest Role', value: targetMember.roles.highest.name, inline: true }
               )
               .setTimestamp()
               .setFooter({ text: 'bmhien AI Moderation' }),
@@ -173,41 +164,41 @@ async function handleCommand(message, command) {
     switch (command.function) {
       case 'mute':
         result = await executeMute(message, command);
-        embedTitle = '🔇 Hạn Chế Chat';
+        embedTitle = '🔇 Member Muted';
         embedColor = 0xFFAA00; // Orange
         break;
       case 'kick':
         result = await executeKick(message, command);
-        embedTitle = '👢 Đã Kick';
+        embedTitle = '👢 Member Kicked';
         embedColor = 0xFF5555; // Red
         break;
       case 'ban':
         result = await executeBan(message, command);
-        embedTitle = '🔨 Đã Ban';
+        embedTitle = '🔨 Member Banned';
         embedColor = 0xDD0000; // Dark Red
         break;
       case 'unmute':
         result = await executeUnmute(message, command);
-        embedTitle = '🔊 Đã Bỏ Hạn Chế Chat';
+        embedTitle = '🔊 Member Unmuted';
         embedColor = 0x55FF55; // Green
         break;
       case 'clear':
         result = await executeClear(message, command);
-        embedTitle = '🧹 Xóa Tin Nhắn';
+        embedTitle = '🧹 Messages Cleared';
         embedColor = 0x5555FF; // Blue
         break;
       case 'lock':
         result = await executeLock(message, command);
-        embedTitle = '🔒 Khóa Channel';
+        embedTitle = '🔒 Channel Locked';
         embedColor = 0xFF6600; // Orange
         break;
       case 'unlock':
         result = await executeUnlock(message, command);
-        embedTitle = '🔓 Mở Khóa Channel';
+        embedTitle = '🔓 Channel Unlocked';
         embedColor = 0x00FF66; // Green
         break;
       default:
-        return 'Lệnh không hợp lệ.';
+        return 'Invalid command.';
     }
     
     // Create embed for command execution
@@ -216,31 +207,31 @@ async function handleCommand(message, command) {
       .setTitle(embedTitle)
       .setDescription(result)
       .addFields(
-        { name: 'Thực hiện bởi', value: `<@${message.author.id}>`, inline: true },
-        { name: 'Chức năng', value: command.function, inline: true }
+        { name: 'Executed By', value: `<@${message.author.id}>`, inline: true },
+        { name: 'Function', value: command.function, inline: true }
       )
       .setTimestamp()
       .setFooter({ text: 'bmhien AI Moderation' });
     
     // Add target field if present
     if (command.target) {
-      commandEmbed.addFields({ name: 'Đối tượng', value: command.target, inline: true });
+      commandEmbed.addFields({ name: 'Target', value: command.target, inline: true });
     }
     
     // Add reason field if present
     if (command.reason) {
-      commandEmbed.addFields({ name: 'Lý do', value: command.reason, inline: false });
+      commandEmbed.addFields({ name: 'Reason', value: command.reason, inline: false });
     }
     
     // Add duration field if present
     if (command.duration) {
-      commandEmbed.addFields({ name: 'Thời gian', value: command.duration, inline: true });
+      commandEmbed.addFields({ name: 'Duration', value: command.duration, inline: true });
     }
     
     return { embed: commandEmbed, text: result };
   } catch (error) {
     console.error('Error executing command:', error);
-    return 'Đã xảy ra lỗi khi thực hiện lệnh.';
+    return 'An error occurred while executing the command.';
   }
 }
 
@@ -249,18 +240,18 @@ function getRequiredPermissionName(commandFunction) {
   switch (commandFunction) {
     case 'mute':
     case 'unmute':
-      return 'Quản lý thành viên (Moderate Members)';
+      return 'Moderate Members';
     case 'kick':
-      return 'Kick thành viên (Kick Members)';
+      return 'Kick Members';
     case 'ban':
-      return 'Ban thành viên (Ban Members)';
+      return 'Ban Members';
     case 'clear':
-      return 'Quản lý tin nhắn (Manage Messages)';
+      return 'Manage Messages';
     case 'lock':
     case 'unlock':
-      return 'Quản lý kênh (Manage Channels)';
+      return 'Manage Channels';
     default:
-      return 'Không xác định';
+      return 'Undefined';
   }
 }
 
