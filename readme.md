@@ -593,8 +593,8 @@ copies or substantial portions of the Software.
 
 *"Bringing AI-powered intelligence to Discord communities worldwide"*
 
-[![GitHub stars](https://img.shields.io/github/stars/yourusername/iris-discord-ai?style=social)](https://github.com/yourusername/iris-discord-ai/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/yourusername/iris-discord-ai?style=social)](https://github.com/yourusername/iris-discord-ai/network/members)
-[![GitHub issues](https://img.shields.io/github/issues/yourusername/iris-discord-ai)](https://github.com/yourusername/iris-discord-ai/issues)
+[![GitHub stars](https://img.shields.io/github/stars/bm-hien/Iris-Discord-AI?style=social)](https://github.com/bm-hien/Iris-Discord-AI/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/bm-hien/Iris-Discord-AI?style=social)](https://github.com/bm-hien/Iris-Discord-AI/network/members)
+[![GitHub issues](https://img.shields.io/github/issues/bm-hien/Iris-Discord-AI)](https://github.com/bm-hien/Iris-Discord-AI/issues)
 
 </div>
