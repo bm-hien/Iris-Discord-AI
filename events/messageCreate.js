@@ -56,7 +56,7 @@ module.exports = {
         const processingEmbed = new EmbedBuilder()
           .setColor(0xFFAA00) // Yellow for processing status
           .setAuthor({ 
-            name: 'bmhien AI',
+            name: 'Iris AI',
             iconURL: client.user.displayAvatarURL()
           })
           .setDescription('🤔 **Thinking...**')
@@ -176,7 +176,7 @@ module.exports = {
           const updatedEmbed = new EmbedBuilder()
             .setColor(0x3498db) // Blue when processing media
             .setAuthor({ 
-              name: 'bmhien AI',
+              name: 'Iris AI',
               iconURL: client.user.displayAvatarURL()
             })
             .setDescription(statusText)
@@ -192,7 +192,7 @@ module.exports = {
         const thinkingEmbed = new EmbedBuilder()
           .setColor(0x9B59B6) // Purple when generating
           .setAuthor({ 
-            name: 'bmhien AI',
+            name: 'Iris AI',
             iconURL: client.user.displayAvatarURL()
           })
           .setDescription('🧠 **Generating response...**')
@@ -255,7 +255,7 @@ module.exports = {
         const errorEmbed = new EmbedBuilder()
           .setColor(0xFF0000) // Red for error
           .setAuthor({ 
-            name: 'bmhien AI',
+            name: 'Iris AI',
             iconURL: client.user.displayAvatarURL()
           })
           .setDescription('❌ **An error occurred while processing your request**')

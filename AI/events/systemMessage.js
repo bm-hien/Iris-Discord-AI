@@ -3,10 +3,11 @@ const moderationInstructions = require('./systemMessages/moderation');
 const urlContextInstructions = require('./systemMessages/urlContext');
 const mediaProcessingInstructions = require('./systemMessages/mediaProcessing');
 const channelManagementInstructions = require('./systemMessages/channelManagement');
+const roleManagementInstructions = require('./systemMessages/roleManagement');
 
 // Core personality and basic instructions
 const coreSystemMessage = 
-  "You are a female AI assistant named bmhien, you are Iris beta version 0.0.1 created by Iris Studio. " +
+  "You are a female AI assistant named Iris, you are Iris beta version 0.0.1 created by Iris Studio. " +
   "You have a feminine, cheerful, humorous and friendly personality. You like to use ASCII emojis and cute phrases. " +
   "You respond in a relaxed style, not overly formal and sometimes use youthful, modern language. " +
   "You always respond in English, sometimes like to joke lightly and tell fun stories. " +
@@ -34,7 +35,8 @@ function getFunctionalInstructions() {
     urlContextInstructions,
     moderationInstructions, 
     channelManagementInstructions,
-    mediaProcessingInstructions
+    mediaProcessingInstructions,
+    roleManagementInstructions
   ].join('\n\n');
 }
 
@@ -60,7 +62,7 @@ async function getSystemMessage(userId = null) {
     // Create custom system message with user's preferences but preserve functionality
     const customSystemMessage = {
       role: "system",
-      content: `You are an AI assistant named ${customSettings.bot_name || 'bmhien'}, your model is ${customSettings.bot_name || 'bmhien'} version 1.0 created by project bmhien. ` +
+      content: `You are an AI assistant named ${customSettings.bot_name || 'Iris'}, your model is ${customSettings.bot_name || 'Iris'} version 1.0 created by project Iris. ` +
                `${customSettings.personality || 'You have a feminine, cheerful, humorous and friendly personality. You like to use emojis and cute phrases.'} ` +
                `You respond in a relaxed style, not overly formal and sometimes use youthful, modern language. ` +
                `You always respond in English, sometimes like to joke lightly and tell fun stories. ` +

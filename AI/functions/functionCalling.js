@@ -1,3 +1,45 @@
+const { executeAddRole, executeRemoveRole } = require('../commands/commandExecutors/Moderation/roleCommand');
+
+const roleManagementFunctions = [
+  {
+    name: "add_role",
+    description: "Add a role to a guild member. Requires Manage Roles permission and proper role hierarchy.",
+    parameters: {
+      type: "object",
+      properties: {
+        userId: {
+          type: "string",
+          description: "The Discord user ID of the target member"
+        },
+        roleId: {
+          type: "string", 
+          description: "The Discord role ID to add"
+        }
+      },
+      required: ["userId", "roleId"]
+    }
+  },
+  {
+    name: "remove_role",
+    description: "Remove a role from a guild member. Requires Manage Roles permission and proper role hierarchy.",
+    parameters: {
+      type: "object",
+      properties: {
+        userId: {
+          type: "string",
+          description: "The Discord user ID of the target member"
+        },
+        roleId: {
+          type: "string",
+          description: "The Discord role ID to remove"
+        }
+      },
+      required: ["userId", "roleId"]
+    }
+  }
+  // Removed list_roles function
+];
+
 const moderationFunctions = [
   {
     name: "moderate_member",
@@ -16,11 +58,11 @@ const moderationFunctions = [
         },
         duration: {
           type: "string",
-          description: "Duration for mute/ban (e.g. 30s, 10m, 1h, 1d). Leave empty if not needed"
+          description: "Duration for temporary actions (e.g., '10m', '1h', '2d') - only for mute"
         },
         reason: {
           type: "string",
-          description: "Reason for performing the moderation action"
+          description: "Reason for the moderation action"
         }
       },
       required: ["action", "user_id"]
@@ -28,19 +70,19 @@ const moderationFunctions = [
   },
   {
     name: "clear_messages",
-    description: "Delete a number of messages in the current channel",
+    description: "Clear/delete messages from the current channel",
     parameters: {
       type: "object",
       properties: {
         amount: {
           type: "integer",
+          description: "Number of messages to delete (1-100)",
           minimum: 1,
-          maximum: 100,
-          description: "Number of messages to delete (from 1 to 100)"
+          maximum: 100
         },
         reason: {
           type: "string",
-          description: "Reason for deleting messages"
+          description: "Reason for clearing messages"
         }
       },
       required: ["amount"]
@@ -73,7 +115,9 @@ const moderationFunctions = [
       },
       required: []
     }
-  }
+  },
+  // Add role management functions to moderation functions
+  ...roleManagementFunctions
 ];
 
 // Helper function to convert function calls to legacy command format
@@ -108,6 +152,26 @@ function convertFunctionCallToCommand(functionCall) {
         channel_id: args.channel_id
       };
     
+    case 'add_role':
+      return {
+        function: 'add_role',
+        parameters: {
+          userId: args.userId,
+          roleId: args.roleId
+        }
+      };
+
+    case 'remove_role':
+      return {
+        function: 'remove_role',
+        parameters: {
+          userId: args.userId,
+          roleId: args.roleId
+        }
+      };
+
+    // Removed list_roles case
+
     default:
       return null;
   }

@@ -102,6 +102,8 @@ async function generateResponse(userMessage, userId, userInfo = {}, imageAttachm
         userPermissionsText = `- Permissions: ${userInfo.permissions.join(', ')}`;
       }
     }
+
+    const roleContextText = userInfo.roleContext || '';
     
     // Format user roles for role hierarchy context
     let userRolesText = '';
@@ -158,9 +160,10 @@ async function generateResponse(userMessage, userId, userInfo = {}, imageAttachm
     let presenceText = '';
     if (userInfo.presence) {
       const presence = userInfo.presence;
-      presenceText = `- Status: ${presence.statusText}`;
+      presenceText = `- Status: ${presence.statusText || 'Unknown'}`;
       
-      if (presence.devices.length > 0) {
+      // Safe check for devices array
+      if (presence.devices && Array.isArray(presence.devices) && presence.devices.length > 0) {
         presenceText += ` (using: ${presence.devices.join(', ')})`;
       }
       
@@ -168,7 +171,8 @@ async function generateResponse(userMessage, userId, userInfo = {}, imageAttachm
         presenceText += `\n- Custom Status: "${presence.customStatus}"`;
       }
       
-      if (presence.activities.length > 0) {
+      // Safe check for activities array
+      if (presence.activities && Array.isArray(presence.activities) && presence.activities.length > 0) {
         presenceText += `\n- Current activities:`;
         
         for (const activity of presence.activities) {
@@ -236,7 +240,6 @@ async function generateResponse(userMessage, userId, userInfo = {}, imageAttachm
       content: `${systemMessageTemplate.content}
 
 User Information:
-- Username: ${userInfo.username || 'Unknown'}
 - User ID: ${userId}
 - Discord Tag: ${userInfo.tag || 'Unknown'}
 - Server: ${userInfo.serverName || 'Direct Message'}
@@ -249,6 +252,7 @@ ${userPermissionsText}
 ${apiKeyStatusText}
 ${presenceText}
 ${urlContextText}
+${roleContextText}
 
 IMPORTANT about URL CONTEXT:
 - When users send URLs, you ${currentModelSupportsUrlContext ? 'CAN' : 'CANNOT'} access and analyze website content
@@ -257,6 +261,14 @@ ${currentModelSupportsUrlContext ?
   '- Inform that current model doesn\'t support URL context\n- Suggest user switch to supported model using /model set'
 }
 - If cannot access URL, clearly inform the user
+
+ROLE MANAGEMENT INSTRUCTIONS:
+- You can see ALL server roles and their details above
+- Use add_role function to assign roles (requires proper permissions and hierarchy)
+- Use remove_role function to remove roles (requires proper permissions and hierarchy)
+- Always check role hierarchy and permissions before suggesting role actions
+- Provide detailed explanations about roles when users ask
+- Show which roles they can manage and which they cannot
 
 SUPPORTED URL CONTEXT MODELS:
 - gemini-2.5-flash-preview-05-20 (recommended)
@@ -335,6 +347,7 @@ If someone sends images, describe the image content in detail in English.
         }
       }
 
+      // Add document attachments for Gemini
       for (const attachment of documentAttachments) {
         try {
           if (isPdfFile(attachment.contentType)) {
@@ -484,7 +497,7 @@ If someone sends images, describe the image content in detail in English.
       
       // Add image attachments if any (only for compatible providers)
       if (userProvider === 'openai') {
-        for (const attachment of imageAttachments) {
+        for (const attachment of actualImageAttachments) {
           try {
             if (attachment.type === 'video' || isVideoFile(attachment.contentType)) {
               // OpenAI currently doesn't support video in the same way as images
@@ -509,6 +522,25 @@ If someone sends images, describe the image content in detail in English.
           }
         }
       }
+
+      // Add document attachments (convert to text description for non-Gemini providers)
+      for (const attachment of documentAttachments) {
+        try {
+          if (isPdfFile(attachment.contentType)) {
+            finalUserMessage.content.push({
+              type: "text",
+              text: `[PDF document attached: ${attachment.url}]`
+            });
+          } else {
+            finalUserMessage.content.push({
+              type: "text", 
+              text: `[Document attached (${attachment.contentType}): ${attachment.url}]`
+            });
+          }
+        } catch (error) {
+          console.error("Error processing document attachment:", error);
+        }
+      }
       
       // Replace the last user message with our formatted one that includes images
       if (messages.length > 1 && messages[messages.length - 1].role === 'user') {
@@ -528,7 +560,7 @@ If someone sends images, describe the image content in detail in English.
       if (finalUserMessage.content.length > 0 || typeof finalUserMessage.content === 'string') {
         messages.push(finalUserMessage);
       }
-    
+      
       // Check if provider supports function calling
       const supportsFunctionCalling = userProvider === 'openai' || userProvider === 'groq';
       
@@ -553,6 +585,7 @@ If someone sends images, describe the image content in detail in English.
             arguments: JSON.parse(chatCompletion.choices[0].message.function_call.arguments)
           });
         }
+        
       } else {
         // Fallback to regular chat for providers that don't support function calling
         const chatCompletion = await openai.chat.completions.create({
@@ -609,7 +642,7 @@ If someone sends images, describe the image content in detail in English.
     // Save assistant's response to history (save the actual response, not formatted)
     await addMessageToHistory(userId, 'assistant', response);
 
-    let botName = 'bmhien AI'; // Default name
+    let botName = 'Iris AI'; // Default name
     if (systemMessageTemplate.content) {
       // Try to extract the name from the system message
       const nameMatch = systemMessageTemplate.content.match(/AI assistant named (.*?),/);
