@@ -169,17 +169,56 @@ client.login(token).catch(error => {
 // Handle uncaught promise rejections
 process.on('unhandledRejection', (error) => {
   console.error('Unhandled promise rejection:', error);
+  // Don't exit the process, just log the error
 });
 
-// Graceful shutdown
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught exception:', error);
+  // Log the error but try to keep the bot running
+  // Only exit if it's a critical error
+  if (error.code === 'ECONNRESET' || error.message.includes('Connection')) {
+    console.log('Network error detected, attempting to continue...');
+  } else {
+    console.error('Critical error, bot may need restart');
+    process.exit(1);
+  }
+});
+
+// Enhanced client error handling
+client.on('error', (error) => {
+  console.error('Discord client error:', error);
+  // Don't exit, let Discord.js handle reconnection
+});
+
+client.on('warn', (warning) => {
+  console.warn('Discord client warning:', warning);
+});
+
+// Graceful shutdown with better cleanup
 process.on('SIGINT', () => {
-  console.log('🛑 Received SIGINT, shutting down gracefully...');
-  client.destroy();
+  console.log('Received SIGINT, shutting down gracefully...');
+  
+  if (client) {
+    client.destroy();
+  }
+  
+  // Close database connections
+  try {
+    const database = require('./AI/events/database');
+    // Database will be closed by its own process handler
+  } catch (error) {
+    console.error('Error closing database:', error);
+  }
+  
   process.exit(0);
 });
 
 process.on('SIGTERM', () => {
-  console.log('🛑 Received SIGTERM, shutting down gracefully...');
-  client.destroy();
+  console.log('Received SIGTERM, shutting down gracefully...');
+  
+  if (client) {
+    client.destroy();
+  }
+  
   process.exit(0);
 });
