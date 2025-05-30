@@ -1,4 +1,4 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 class EmbedPaginator {
   constructor(embeds, userId, timeout = 60000) {
@@ -13,7 +13,7 @@ class EmbedPaginator {
       .addComponents(
         new ButtonBuilder()
           .setCustomId('prev_embed')
-          .setLabel('◀ Trước')
+          .setLabel('◀ Previous')
           .setStyle(ButtonStyle.Secondary)
           .setDisabled(this.currentPage === 0),
         new ButtonBuilder()
@@ -23,7 +23,7 @@ class EmbedPaginator {
           .setDisabled(true),
         new ButtonBuilder()
           .setCustomId('next_embed')
-          .setLabel('Tiếp ▶')
+          .setLabel('Next ▶')
           .setStyle(ButtonStyle.Secondary)
           .setDisabled(this.currentPage === this.embeds.length - 1)
       );
@@ -47,25 +47,6 @@ class EmbedPaginator {
       return true;
     }
     return false;
-  }
-
-  async sendPaginatedMessage(message) {
-    if (this.embeds.length <= 1) {
-      // If only one embed, send normally
-      return await message.reply({ embeds: [this.embeds[0]] });
-    }
-
-    const components = this.embeds.length > 1 ? [this.createButtons()] : [];
-    const sentMessage = await message.reply({
-      embeds: [this.getCurrentEmbed()],
-      components: components
-    });
-
-    if (this.embeds.length > 1) {
-      this.setupCollector(sentMessage);
-    }
-
-    return sentMessage;
   }
 
   setupCollector(sentMessage) {
@@ -99,24 +80,26 @@ class EmbedPaginator {
           .addComponents(
             new ButtonBuilder()
               .setCustomId('prev_embed')
-              .setLabel('◀ Trước')
+              .setLabel('◀ Previous')
               .setStyle(ButtonStyle.Secondary)
               .setDisabled(true),
             new ButtonBuilder()
               .setCustomId('page_info')
-              .setLabel(`${this.currentPage + 1}/${this.embeds.length}`)
-              .setStyle(ButtonStyle.Primary)
+              .setLabel('Expired')
+              .setStyle(ButtonStyle.Danger)
               .setDisabled(true),
             new ButtonBuilder()
               .setCustomId('next_embed')
-              .setLabel('Tiếp ▶')
+              .setLabel('Next ▶')
               .setStyle(ButtonStyle.Secondary)
               .setDisabled(true)
           );
 
-        await sentMessage.edit({ components: [disabledRow] });
+        await sentMessage.edit({
+          components: [disabledRow]
+        });
       } catch (error) {
-        console.error('Error disabling pagination buttons:', error);
+        console.error('Error disabling buttons:', error);
       }
     });
   }
