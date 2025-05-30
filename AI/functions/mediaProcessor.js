@@ -67,8 +67,78 @@ function isVideoFile(contentType) {
   return videoTypes.some(type => contentType?.toLowerCase().includes(type));
 }
 
+async function pdfToBase64(pdfUrl) {
+  try {
+    console.log(`Attempting to fetch PDF from: ${pdfUrl}`);
+    
+    const response = await fetch(pdfUrl);
+    
+    if (!response.ok) {
+      console.error(`Failed to fetch PDF: ${response.status} ${response.statusText}`);
+      return null;
+    }
+    
+    const buffer = await response.buffer();
+    
+    if (!buffer || buffer.length === 0) {
+      console.error("Received empty PDF data");
+      return null;
+    }
+    
+    // Check file size (20MB limit for PDFs in Gemini)
+    const maxSize = 20 * 1024 * 1024; // 20MB
+    if (buffer.length > maxSize) {
+      console.error(`PDF too large: ${buffer.length} bytes (max: ${maxSize})`);
+      return null;
+    }
+    
+    console.log(`Successfully fetched PDF (${buffer.length} bytes)`);
+    return buffer.toString('base64');
+  } catch (error) {
+    console.error("Error converting PDF to base64:", error.message);
+    return null;
+  }
+}
+
+/**
+ * Kiểm tra xem file có phải là PDF không
+ * @param {string} contentType - Content type của file
+ * @returns {boolean}
+ */
+function isPdfFile(contentType) {
+  return contentType?.toLowerCase().includes('application/pdf');
+}
+
+/**
+ * Kiểm tra xem file có phải là document được hỗ trợ không
+ * @param {string} contentType - Content type của file
+ * @returns {boolean}
+ */
+function isSupportedDocumentFile(contentType) {
+  const supportedTypes = [
+    'application/pdf',
+    'application/x-javascript',
+    'text/javascript',
+    'application/x-python',
+    'text/x-python',
+    'text/plain',
+    'text/html',
+    'text/css',
+    'text/md',
+    'text/csv',
+    'text/xml',
+    'text/rtf'
+  ];
+  
+  return supportedTypes.some(type => contentType?.toLowerCase().includes(type));
+}
+
+
 module.exports = {
   imageToBase64,
   videoToBase64,
-  isVideoFile
+  isVideoFile,
+  pdfToBase64,
+  isPdfFile,
+  isSupportedDocumentFile
 };

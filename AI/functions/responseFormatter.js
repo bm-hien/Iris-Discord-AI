@@ -1,16 +1,16 @@
 /**
  * Format the AI response to make code blocks look better in embeds
  * Discord embeds support markdown, but we need to ensure proper formatting
- * @param {string} response - Phản hồi gốc từ AI
- * @returns {Object} - Phản hồi đã được định dạng và danh sách code blocks
+ * @param {string} response - Original AI response
+ * @returns {Object} - Formatted response and code blocks list
  */
 function formatResponseForEmbed(response) {
   // Handle undefined or null response
   if (!response || typeof response !== 'string') {
     return {
-      mainContent: "✅ **Đã thực hiện hành động.**",
+      mainContent: "✅ **Action completed.**",
       codeBlocks: [],
-      answerContent: "✅ **Đã thực hiện hành động.**" // Remove 'answer' wrapper
+      answerContent: "✅ **Action completed.**"
     };
   }
   
@@ -54,7 +54,7 @@ function formatResponseForEmbed(response) {
   
   // Make sure formattedResponse is never empty
   if (!formattedResponse || formattedResponse.trim() === '') {
-    formattedResponse = "✅ **Đã thực hiện hành động.**";
+    formattedResponse = "✅ **Action completed.**";
   }
   
   // Clean up extra whitespace

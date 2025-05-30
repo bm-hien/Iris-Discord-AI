@@ -9,7 +9,7 @@ const { extractCommand } = require('../commands/commandHandler');
 const { moderationFunctions, convertFunctionCallToCommand } = require('./functionCalling');
 const { createCodeEmbed } = require('../utilities/formatters');
 const { formatResponseForEmbed } = require('./responseFormatter');
-const { imageToBase64, videoToBase64, isVideoFile } = require('./mediaProcessor');
+const { imageToBase64, videoToBase64, isVideoFile, pdfToBase64, isPdfFile, isSupportedDocumentFile } = require('./mediaProcessor');
 const { extractUrls } = require('../utilities/urlExtractor');
 const { modelSupportsUrlContext } = require('../../commands/AI/model');
 const {
@@ -67,6 +67,16 @@ async function generateResponse(userMessage, userId, userInfo = {}, imageAttachm
 
     // Check if the provider is Gemini
     const isGeminiProvider = userProvider === 'gemini' || (!userApiKey && apiKey.startsWith("AIza"));
+
+    const documentAttachments = imageAttachments.filter(attachment => {
+      const contentType = attachment.contentType?.toLowerCase() || '';
+      return isSupportedDocumentFile(contentType);
+    });
+
+    const actualImageAttachments = imageAttachments.filter(attachment => {
+      const contentType = attachment.contentType?.toLowerCase() || '';
+      return contentType.startsWith('image/') || contentType.startsWith('video/');
+    });
 
     const currentModelSupportsUrlContext = isGeminiProvider && modelSupportsUrlContext(modelToUse);
 
@@ -297,7 +307,7 @@ If someone sends images, describe the image content in detail in English.
       }
       
       // Add images and videos for Gemini
-      for (const attachment of imageAttachments) {
+      for (const attachment of actualImageAttachments) {
         try {
           if (attachment.type === 'video' || isVideoFile(attachment.contentType)) {
             const base64Video = await videoToBase64(attachment.url);
@@ -322,6 +332,37 @@ If someone sends images, describe the image content in detail in English.
           }
         } catch (error) {
           console.error("Error processing media attachment:", error);
+        }
+      }
+
+      for (const attachment of documentAttachments) {
+        try {
+          if (isPdfFile(attachment.contentType)) {
+            const base64Pdf = await pdfToBase64(attachment.url);
+            if (base64Pdf) {
+              parts.push({
+                inlineData: {
+                  data: base64Pdf,
+                  mimeType: 'application/pdf'
+                }
+              });
+            }
+          } else {
+            // Handle other document types
+            const response = await fetch(attachment.url);
+            if (response.ok) {
+              const buffer = await response.buffer();
+              const base64Doc = buffer.toString('base64');
+              parts.push({
+                inlineData: {
+                  data: base64Doc,
+                  mimeType: attachment.contentType
+                }
+              });
+            }
+          }
+        } catch (error) {
+          console.error("Error processing document attachment:", error);
         }
       }
       
