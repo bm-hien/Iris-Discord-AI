@@ -112,6 +112,7 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 - **🐛 Bug Reports**: [Create an issue](https://github.com/bm-hien/Iris-Discord-AI/issues)
 - **💡 Feature Requests**: [Submit suggestions](https://github.com/bm-hien/Iris-Discord-AI/issues)
 - **💬 Support**: [Join our Discord](https://discord.gg/pevruS26Au)
+- **☕ Support Development**: [Buy me a coffee](https://buymeacoffee.com/bmhien)
 
 ---
 
@@ -120,5 +121,7 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 **Made with ❤️ by [Bmhien](https://github.com/bm-hien)**
 
 *Bringing AI-powered intelligence to Discord communities worldwide*
+
+**☕ [Support the project](https://buymeacoffee.com/bmhien)**
 
 </div>
