@@ -2,8 +2,8 @@ async function executeClear(message, command) {
   const { amount, reason } = command;
   const channel = message.channel;
   
-  // Validate amount
-  const deleteCount = parseInt(amount);
+  // Handle both string and number types
+  const deleteCount = typeof amount === 'number' ? amount : parseInt(amount);
   if (isNaN(deleteCount) || deleteCount < 1 || deleteCount > 100) {
     return 'Invalid amount. Please specify a number between 1 and 100.';
   }

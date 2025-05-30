@@ -92,7 +92,7 @@ function convertFunctionCallToCommand(functionCall) {
     case "clear_messages":
       return {
         function: "clear",
-        target: args.amount.toString(),
+        amount: args.amount,
         reason: args.reason
       };
       

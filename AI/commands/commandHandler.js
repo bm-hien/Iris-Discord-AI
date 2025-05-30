@@ -215,7 +215,7 @@ async function handleCommand(message, command) {
     
     // Add target field if present
     if (command.target) {
-      commandEmbed.addFields({ name: 'Target', value: command.target, inline: true });
+      commandEmbed.addFields({ name: 'Target', value: String(command.target), inline: true });
     }
     
     // Add reason field if present
@@ -226,6 +226,11 @@ async function handleCommand(message, command) {
     // Add duration field if present
     if (command.duration) {
       commandEmbed.addFields({ name: 'Duration', value: command.duration, inline: true });
+    }
+    
+    // Add amount field if present (for clear command)
+    if (command.amount) {
+      commandEmbed.addFields({ name: 'Amount', value: String(command.amount), inline: true });
     }
     
     return { embed: commandEmbed, text: result };
