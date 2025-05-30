@@ -1,11 +1,59 @@
 {
+  "name": "iris-discord-ai-bot",
+  "version": "1.0.0",
+  "description": "Intelligent Discord AI bot with multi-provider support (OpenAI, Gemini, Groq), AI-powered moderation, media processing, and advanced conversation management",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "discord-bot",
+    "ai-chatbot",
+    "openai",
+    "gemini-ai",
+    "groq-api",
+    "javascript",
+    "nodejs",
+    "discord-js",
+    "ai-integration",
+    "moderation-bot",
+    "multi-provider",
+    "function-calling",
+    "media-processing",
+    "url-context",
+    "chatbot-framework",
+    "automated-moderation"
+  ],
+  "author": {
+    "name": "Bmhien",
+    "url": "https://github.com/bm-hien"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bm-hien/Iris-Discord-AI.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bm-hien/Iris-Discord-AI/issues"
+  },
+  "homepage": "https://github.com/bm-hien/Iris-Discord-AI#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "@google/genai": "^1.0.1",
     "discord.js": "^14.19.3",
     "dotenv": "^16.5.0",
     "node-fetch": "^2.7.0",
     "openai": "^4.100.0",
-    "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  },
+  "optionalDependencies": {
+    "groq-sdk": "^0.5.0"
   }
 }
