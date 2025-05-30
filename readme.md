@@ -35,7 +35,7 @@ Iris is a powerful Discord AI bot that integrates multiple AI providers (Gemini,
 ### Prerequisites
 - Node.js 18.0.0 or higher
 - Discord Bot Token
-- AI API Key (optional but recommended)
+- AI API Key 
 
 ### Installation
 
