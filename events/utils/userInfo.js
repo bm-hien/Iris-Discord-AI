@@ -209,6 +209,7 @@ function getAvailableActions(executor, target) {
     canMute: false,
     canManageRoles: false,
     canManageNickname: false,
+    canChangeOwnNickname: false,
     managableRoles: [],
     selfAssignableRoles: [],
     restrictions: []
@@ -222,6 +223,9 @@ function getAvailableActions(executor, target) {
 
   // Check if target is executor themselves (special handling for self-role assignment)
   if (target.id === executor.id) {
+    // For self-actions
+    actions.canChangeOwnNickname = executor.permissions.has(PermissionsBitField.Flags.ChangeNickname);
+    
     // For self-assignment, check what roles they can assign to themselves
     if (executor.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
       const guild = executor.guild;
@@ -247,7 +251,7 @@ function getAvailableActions(executor, target) {
       }));
     }
     
-    actions.restrictions.push('Self-role assignment only (lower roles)');
+    actions.restrictions.push('Self-actions only (roles and nickname)');
     return actions;
   }
 

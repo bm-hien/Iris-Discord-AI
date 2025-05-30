@@ -9,19 +9,19 @@ function validateCommand(command) {
   // Check if it has required fields
   if (!command.function) return false;
   
-  // Validate command type - UPDATED to include role management
-  const validFunctions = ['mute', 'kick', 'ban', 'unmute', 'clear', 'lock', 'unlock', 'add_role', 'remove_role'];
+  // Validate command type - UPDATED to include nickname management
+  const validFunctions = ['mute', 'kick', 'ban', 'unmute', 'clear', 'lock', 'unlock', 'add_role', 'remove_role', 'change_nickname'];
   if (!validFunctions.includes(command.function)) return false;
   
-  // Role management commands have different structure
-  if (['add_role', 'remove_role'].includes(command.function)) {
+  // Role management and nickname commands have different structure
+  if (['add_role', 'remove_role', 'change_nickname'].includes(command.function)) {
     // Check for parameters object
     if (!command.parameters || typeof command.parameters !== 'object') {
       return false;
     }
     
     // Validate required parameters
-    if (!command.parameters.userId || !command.parameters.roleId) {
+    if (!command.parameters.userId) {
       return false;
     }
     
@@ -30,9 +30,22 @@ function validateCommand(command) {
       return false;
     }
     
-    // Validate roleId format (Discord ID)
-    if (typeof command.parameters.roleId !== 'string' || !/^\d{17,19}$/.test(command.parameters.roleId)) {
-      return false;
+    // For role commands, also validate roleId
+    if (['add_role', 'remove_role'].includes(command.function)) {
+      if (!command.parameters.roleId) {
+        return false;
+      }
+      
+      if (typeof command.parameters.roleId !== 'string' || !/^\d{17,19}$/.test(command.parameters.roleId)) {
+        return false;
+      }
+    }
+    
+    // For nickname command, validate nickname if provided
+    if (command.function === 'change_nickname' && command.parameters.nickname) {
+      if (typeof command.parameters.nickname !== 'string' || command.parameters.nickname.length > 32) {
+        return false;
+      }
     }
     
     return true;

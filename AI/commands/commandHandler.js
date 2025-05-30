@@ -14,6 +14,8 @@ const executeClear = require('./commandExecutors/Utils/clearCommand');
 const executeLock = require('./commandExecutors/Moderation/lockCommand');
 const executeUnlock = require('./commandExecutors/Moderation/unlockCommand');
 const { executeAddRole, executeRemoveRole } = require('./commandExecutors/Moderation/roleCommand');
+const { executeChangeNickname } = require('./commandExecutors/Moderation/nicknameCommand');
+
 
 // Helper function to check if a user has the required permissions for a command
 function hasPermission(member, command) {
@@ -40,7 +42,10 @@ function hasPermission(member, command) {
     case 'add_role':
     case 'remove_role':
       return member.permissions.has(PermissionsBitField.Flags.ManageRoles);
-    
+    case 'change_nickname':
+      // For nickname changes, check if it's self or others
+      return member.permissions.has(PermissionsBitField.Flags.ChangeNickname) || 
+             member.permissions.has(PermissionsBitField.Flags.ManageNicknames);
     default:
       return false;
   }
@@ -230,6 +235,11 @@ async function handleCommand(message, command) {
         embedTitle = '🎭 Role Removed';
         embedColor = 0xFF6B6B;
         break;
+      case 'change_nickname':
+        result = await executeChangeNickname(message, command);
+        embedTitle = '📝 Nickname Changed';
+        embedColor = 0x00FF9F;
+        break;
       default:
         result = { success: false, message: `Unknown command: ${command.function}` };
         break;
@@ -352,6 +362,8 @@ function getRequiredPermissionName(commandFunction) {
     case 'add_role':
     case 'remove_role':
       return 'Manage Roles';
+    case 'change_nickname':
+      return 'Change Nickname / Manage Nicknames';
     default:
       return 'Undefined';
   }

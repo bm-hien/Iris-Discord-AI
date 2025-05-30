@@ -4,6 +4,7 @@ const urlContextInstructions = require('./systemMessages/urlContext');
 const mediaProcessingInstructions = require('./systemMessages/mediaProcessing');
 const channelManagementInstructions = require('./systemMessages/channelManagement');
 const roleManagementInstructions = require('./systemMessages/roleManagement');
+const nicknameManagementInstructions = require('./systemMessages/nicknameManagement');
 
 // Core personality and basic instructions
 const coreSystemMessage = 
@@ -36,7 +37,8 @@ function getFunctionalInstructions() {
     moderationInstructions, 
     channelManagementInstructions,
     mediaProcessingInstructions,
-    roleManagementInstructions
+    roleManagementInstructions,
+    nicknameManagementInstructions
   ].join('\n\n');
 }
 

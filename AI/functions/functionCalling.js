@@ -89,6 +89,24 @@ const moderationFunctions = [
     }
   },
   {
+    name: "change_nickname",
+    description: "Change nickname of a user (including self) in the server",
+    parameters: {
+      type: "object",
+      properties: {
+        userId: {
+          type: "string",
+          description: "The ID of the user to change nickname (can be self)"
+        },
+        nickname: {
+          type: "string",
+          description: "New nickname to set (null or empty to reset to username)"
+        }
+      },
+      required: ["userId"]
+    }
+  },
+  {
     name: "lock_channel",
     description: "Lock the current channel or a specific channel by ID, preventing members from sending messages",
     parameters: {
@@ -167,6 +185,14 @@ function convertFunctionCallToCommand(functionCall) {
         parameters: {
           userId: args.userId,
           roleId: args.roleId
+        }
+      };
+    case 'change_nickname':
+      return {
+        function: 'change_nickname',
+        parameters: {
+          userId: args.userId,
+          nickname: args.nickname || null
         }
       };
 
