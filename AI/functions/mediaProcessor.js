@@ -6,7 +6,36 @@ const fetch = require('node-fetch');
  * @returns {Promise<string|null>} - Dữ liệu hình ảnh dạng base64 hoặc null nếu có lỗi
  */
 async function imageToBase64(imageUrl) {
-  // ...existing code...
+  try {
+    console.log(`Attempting to fetch image from: ${imageUrl}`);
+    
+    const response = await fetch(imageUrl);
+    
+    if (!response.ok) {
+      console.error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+      return null;
+    }
+    
+    const buffer = await response.buffer();
+    
+    if (!buffer || buffer.length === 0) {
+      console.error("Received empty image data");
+      return null;
+    }
+    
+    // Check file size (Discord attachment limit is 25MB for most servers)
+    const maxSize = 25 * 1024 * 1024; // 25MB
+    if (buffer.length > maxSize) {
+      console.error(`Image too large: ${buffer.length} bytes (max: ${maxSize})`);
+      return null;
+    }
+    
+    console.log(`Successfully fetched image (${buffer.length} bytes)`);
+    return buffer.toString('base64');
+  } catch (error) {
+    console.error("Error converting image to base64:", error.message);
+    return null;
+  }
 }
 
 /**
