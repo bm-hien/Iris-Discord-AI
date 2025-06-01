@@ -1,10 +1,13 @@
 /**
- * Handle new message events with status indicators
+ * Handle new message events with status indicators and rate limiting
  */
 const { Events, EmbedBuilder } = require('discord.js');
 const { generateResponse } = require('../AI/ai.js');
 const { handleCommand } = require('../AI/commands/commandHandler.js');
 const { getUserInfo } = require('./utils/userInfo');
+
+// Map để track active requests per user (chỉ khi AI đang xử lý)
+const activeRequests = new Set();
 
 module.exports = {
   name: Events.MessageCreate,
@@ -51,6 +54,39 @@ module.exports = {
     
     // Only respond to mentions, DMs, replies to bot, or when replying with mention
     if (isMentioned || isDM || isReplyToBot || isReplyToUserWithBotMention) {
+      
+      const userId = message.author.id;
+      
+      // Check if user has active request (AI đang xử lý)
+      if (activeRequests.has(userId)) {
+        const waitEmbed = new EmbedBuilder()
+          .setColor(0xFFAA00)
+          .setTitle('⏳ Please Wait')
+          .setDescription('I\'m still processing your previous message. Please wait for me to finish before sending another request.')
+          .addFields({
+            name: '💡 Why?',
+            value: 'This prevents overlapping responses and ensures proper conversation flow!',
+            inline: false
+          })
+          .setFooter({ text: 'Your request will be processed once the current one is complete' })
+          .setTimestamp();
+        
+        const reply = await message.reply({ 
+          embeds: [waitEmbed],
+          allowedMentions: { repliedUser: false }
+        });
+        
+        // Auto-delete the warning after 8 seconds
+        setTimeout(() => {
+          reply.delete().catch(() => {});
+        }, 8000);
+        
+        return;
+      }
+      
+      // Mark user as having active request
+      activeRequests.add(userId);
+      
       try {
         // Show immediate processing status
         const processingEmbed = new EmbedBuilder()
@@ -78,7 +114,7 @@ module.exports = {
         if (!content) {
           content = "Hello!";
         }
-        
+
         // If replying to another user's message with bot mention, include that context
         if (isReplyToUserWithBotMention && originalMessage) {
           // Prepend the original message for context
@@ -100,7 +136,8 @@ module.exports = {
           return contentType.startsWith('image/');
         }).map(attachment => ({
           url: attachment.url,
-          contentType: attachment.contentType || 'image/jpeg'
+          contentType: attachment.contentType || 'image/jpeg',
+          type: 'image'
         }));
 
         const videoAttachments = message.attachments.filter(attachment => {
@@ -151,6 +188,8 @@ module.exports = {
           } else {
             statusText = `📄 **Analyzing ${otherDocCount} document${otherDocCount > 1 ? 's' : ''}...**`;
           }
+        } else if (documentAttachments.length > 0 && imageAttachments.length > 0) {
+          statusText = `📄 **Reading ${documentAttachments.length} document${documentAttachments.length > 1 ? 's' : ''} and ${imageAttachments.length} image${imageAttachments.length > 1 ? 's' : ''}...**`;
         } else if (imageAttachments.length > 0 && videoAttachments.length > 0) {
           statusText = `🖼️ **Analyzing ${imageAttachments.length} image${imageAttachments.length > 1 ? 's' : ''} and ${videoAttachments.length} video${videoAttachments.length > 1 ? 's' : ''}...**`;
         } else if (imageAttachments.length > 0) {
@@ -304,6 +343,9 @@ module.exports = {
             allowedMentions: { repliedUser: false }
           });
         }
+      } finally {
+        // QUAN TRỌNG: Remove user from active requests khi AI xong
+        activeRequests.delete(userId);
       }
     }
   }
