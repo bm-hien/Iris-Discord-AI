@@ -41,6 +41,19 @@ function initDatabase() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
 
+    // CREATE CUSTOM PROVIDERS TABLE
+    db.run(`CREATE TABLE IF NOT EXISTS custom_providers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      endpoint TEXT NOT NULL,
+      default_model TEXT NOT NULL,
+      description TEXT,
+      auth_header TEXT DEFAULT 'Bearer',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, name)
+    )`);
+
     // Add missing columns to existing api_keys table if they don't exist
     db.run(`ALTER TABLE api_keys ADD COLUMN model TEXT DEFAULT 'gemini-2.0-flash'`, (err) => {
       if (err && !err.message.includes('duplicate column name')) {
@@ -345,6 +358,70 @@ async function getUserModel(userId) {
   }
 }
 
+// Add a custom provider for a user
+async function addCustomProvider(userId, name, endpoint, defaultModel, description, authHeader) {
+  try {
+    return new Promise((resolve, reject) => {
+      db.run(
+        'INSERT INTO custom_providers (user_id, name, endpoint, default_model, description, auth_header) VALUES (?, ?, ?, ?, ?, ?)',
+        [userId, name, endpoint, defaultModel, description, authHeader],
+        function(err) {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(true);
+        }
+      );
+    });
+  } catch (error) {
+    console.error('Error adding custom provider:', error);
+    throw error;
+  }
+}
+
+// Get all custom providers for a user
+async function getUserCustomProviders(userId) {
+  try {
+    return new Promise((resolve, reject) => {
+      db.all('SELECT * FROM custom_providers WHERE user_id = ?', [userId], (err, rows) => {
+        if (err) {
+          // If table doesn't exist, return empty array
+          if (err.message.includes('no such table: custom_providers')) {
+            console.log('Custom providers table not found, returning empty array');
+            resolve([]);
+            return;
+          }
+          reject(err);
+          return;
+        }
+        resolve(rows || []);
+      });
+    });
+  } catch (error) {
+    console.error('Error getting custom providers:', error);
+    return []; // Return empty array instead of throwing error
+  }
+}
+
+// Remove a custom provider for a user
+async function removeCustomProvider(userId, name) {
+  try {
+    return new Promise((resolve, reject) => {
+      db.run('DELETE FROM custom_providers WHERE user_id = ? AND name = ?', [userId, name], function(err) {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve(this.changes > 0);
+      });
+    });
+  } catch (error) {
+    console.error('Error removing custom provider:', error);
+    throw error;
+  }
+}
+
 async function setUserProvider(userId, providerId, endpoint) {
   try {
     // First check if the user has an API key
@@ -442,5 +519,8 @@ module.exports = {
   getUserModel,
   setUserProvider,
   getUserProvider,
-  getUserEndpoint
+  getUserEndpoint,
+  addCustomProvider,
+  getUserCustomProviders,
+  removeCustomProvider
 };

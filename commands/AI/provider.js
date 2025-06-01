@@ -83,17 +83,69 @@ module.exports = {
     // Handle modal submission for custom provider setup
     if (interaction.isModalSubmit()) {
       if (interaction.customId === 'custom_provider_modal') {
-        await interaction.deferReply({ ephemeral: true });
-        
-        const name = interaction.fields.getTextInputValue('provider_name');
-        const endpoint = interaction.fields.getTextInputValue('provider_endpoint');
-        const defaultModel = interaction.fields.getTextInputValue('provider_model');
-        const description = interaction.fields.getTextInputValue('provider_description') || 'Custom provider';
-        const authHeader = interaction.fields.getTextInputValue('provider_auth_header') || 'Bearer';
-        
         try {
-          // Validate URL
-          new URL(endpoint);
+          await interaction.deferReply({ ephemeral: true });
+          
+          const name = interaction.fields.getTextInputValue('provider_name');
+          const endpoint = interaction.fields.getTextInputValue('provider_endpoint');
+          const defaultModel = interaction.fields.getTextInputValue('provider_model');
+          const description = interaction.fields.getTextInputValue('provider_description') || 'Custom provider';
+          const authHeader = interaction.fields.getTextInputValue('provider_auth_header') || 'Bearer';
+          
+          // Validate inputs with better error messages
+          const validationErrors = [];
+          
+          // Validate provider name
+          if (!name || name.trim().length === 0) {
+            validationErrors.push('Provider name cannot be empty');
+          } else if (name.length > 50) {
+            validationErrors.push('Provider name must be 50 characters or less');
+          }
+          
+          // Validate endpoint URL
+          try {
+            new URL(endpoint);
+            if (!endpoint.startsWith('http://') && !endpoint.startsWith('https://')) {
+              validationErrors.push('Endpoint must start with http:// or https://');
+            }
+          } catch (urlError) {
+            validationErrors.push('Invalid endpoint URL format');
+          }
+          
+          // Validate model name
+          if (!defaultModel || defaultModel.trim().length === 0) {
+            validationErrors.push('Default model cannot be empty');
+          } else if (defaultModel.length > 100) {
+            validationErrors.push('Model name must be 100 characters or less');
+          }
+          
+          // Validate description length
+          if (description.length > 500) {
+            validationErrors.push('Description must be 500 characters or less');
+          }
+          
+          // Validate auth header
+          if (authHeader.length > 50) {
+            validationErrors.push('Auth header must be 50 characters or less');
+          }
+          
+          // If there are validation errors, show them
+          if (validationErrors.length > 0) {
+            const errorEmbed = new EmbedBuilder()
+              .setColor(0xFF0000)
+              .setTitle('❌ Invalid Input')
+              .setDescription('Please fix the following issues and try again:')
+              .addFields({
+                name: 'Issues Found',
+                value: validationErrors.map((error, index) => `${index + 1}. ${error}`).join('\n'),
+                inline: false
+              })
+              .setFooter({ text: 'Use /provider setup to try again' })
+              .setTimestamp();
+            
+            await interaction.editReply({ embeds: [errorEmbed], ephemeral: true });
+            return;
+          }
           
           // Check if provider name already exists
           const existingProviders = await getUserCustomProviders(interaction.user.id);
@@ -101,25 +153,52 @@ module.exports = {
             const errorEmbed = new EmbedBuilder()
               .setColor(0xFF0000)
               .setTitle('❌ Provider Name Already Exists')
-              .setDescription(`You already have a custom provider named "${name}". Please choose a different name.`)
+              .setDescription(`You already have a custom provider named "${name}".`)
+              .addFields({
+                name: 'What to do?',
+                value: '• Choose a different name\n• Remove the existing provider first\n• Use `/provider custom action:list` to see existing providers',
+                inline: false
+              })
+              .setFooter({ text: 'Use /provider setup to try again with a different name' })
               .setTimestamp();
             
             await interaction.editReply({ embeds: [errorEmbed], ephemeral: true });
             return;
           }
           
-          // Test the custom provider
+          // Check API key
           const apiKey = await getUserApiKey(interaction.user.id);
           if (!apiKey) {
             const errorEmbed = new EmbedBuilder()
               .setColor(0xFF0000)
               .setTitle('❌ API Key Required')
-              .setDescription('You need to set an API key first using `/apikey set`.')
+              .setDescription('You need to set an API key first.')
+              .addFields({
+                name: 'Next Steps',
+                value: '1. Use `/apikey set` to add your API key\n2. Then use `/provider setup` again',
+                inline: false
+              })
+              .setFooter({ text: 'API keys are required for custom providers' })
               .setTimestamp();
             
             await interaction.editReply({ embeds: [errorEmbed], ephemeral: true });
             return;
           }
+          
+          // Show testing message
+          const testingEmbed = new EmbedBuilder()
+            .setColor(0xFFAA00)
+            .setTitle('🔄 Testing Provider...')
+            .setDescription(`Testing connection to "${name}"...`)
+            .addFields({
+              name: 'Testing Configuration',
+              value: `**Endpoint:** ${endpoint.length > 50 ? endpoint.substring(0, 50) + '...' : endpoint}\n**Model:** ${defaultModel}`,
+              inline: false
+            })
+            .setFooter({ text: 'This may take a few seconds' })
+            .setTimestamp();
+          
+          await interaction.editReply({ embeds: [testingEmbed], ephemeral: true });
           
           // Test the provider
           const openai = new OpenAI({
@@ -138,51 +217,145 @@ module.exports = {
           
           const successEmbed = new EmbedBuilder()
             .setColor(0x00FF00)
-            .setTitle('✅ Custom Provider Added Successfully')
-            .setDescription(`Your custom provider "${name}" has been added and tested successfully!`)
+            .setTitle('✅ Provider Added Successfully!')
+            .setDescription(`Custom provider "${name}" is ready to use.`)
             .addFields(
-              { name: 'Provider Name', value: name, inline: true },
-              { name: 'Endpoint', value: endpoint, inline: true },
-              { name: 'Default Model', value: defaultModel, inline: true },
-              { name: 'Description', value: description, inline: false },
-              { name: 'Auth Header', value: authHeader, inline: true },
-              { name: 'Test Response', value: testResponse.choices[0].message.content || 'No response' }
+              { name: '📝 Provider Info', value: `**Name:** ${name}\n**Model:** ${defaultModel}`, inline: true },
+              { name: '🔗 Connection', value: `**Status:** Connected ✅\n**Auth:** ${authHeader}`, inline: true },
+              { name: '🧪 Test Result', value: testResponse.choices[0].message.content || 'Test completed', inline: false },
+              { name: '🎯 Next Steps', value: 'Use `/provider set` to switch to this provider', inline: false }
             )
-            .setFooter({ text: 'Use /provider set to switch to this provider' })
+            .setFooter({ text: 'Provider saved and tested successfully' })
             .setTimestamp();
           
           await interaction.editReply({ embeds: [successEmbed], ephemeral: true });
-        } catch (error) {
-          console.error('Error setting up custom provider:', error);
           
-          let errorMessage = 'There was an error setting up your custom provider.';
+        } catch (error) {
+          
+          // Better error categorization
+          let errorTitle = '❌ Setup Failed';
+          let errorDescription = 'Could not set up your custom provider.';
+          let errorSolution = 'Please check your settings and try again.';
           
           if (error.message.includes('Invalid URL')) {
-            errorMessage = 'The endpoint URL you provided is not valid.';
+            errorTitle = '❌ Invalid URL';
+            errorDescription = 'The endpoint URL format is incorrect.';
+            errorSolution = 'Make sure your URL starts with https:// and is properly formatted.';
           } else if (error.status === 401 || error.status === 403) {
-            errorMessage = 'Your API key doesn\'t have access to this provider/model.';
+            errorTitle = '❌ Authentication Failed';
+            errorDescription = 'Your API key was rejected by the provider.';
+            errorSolution = 'Check if your API key is correct and has proper permissions.';
           } else if (error.status === 404) {
-            errorMessage = 'The model or endpoint was not found. Please check your settings.';
+            errorTitle = '❌ Not Found';
+            errorDescription = 'The model or endpoint was not found.';
+            errorSolution = 'Verify the endpoint URL and model name are correct.';
+          } else if (error.status === 429) {
+            errorTitle = '❌ Rate Limited';
+            errorDescription = 'The provider is rate limiting requests.';
+            errorSolution = 'Wait a moment and try again.';
+          } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+            errorTitle = '❌ Connection Failed';
+            errorDescription = 'Could not connect to the provider endpoint.';
+            errorSolution = 'Check if the endpoint URL is correct and accessible.';
           }
           
           const errorEmbed = new EmbedBuilder()
             .setColor(0xFF0000)
-            .setTitle('❌ Setup Failed')
-            .setDescription(errorMessage)
+            .setTitle(errorTitle)
+            .setDescription(errorDescription)
             .addFields(
-              { name: 'Error Details', value: error.message || 'Unknown error' }
+              { name: '💡 Solution', value: errorSolution, inline: false },
+              { name: '🔧 What to check', value: '• Endpoint URL format\n• API key validity\n• Model name spelling\n• Network connection', inline: false }
             )
+            .setFooter({ text: 'Use /provider setup to try again' })
             .setTimestamp();
           
-          await interaction.editReply({ embeds: [errorEmbed], ephemeral: true });
+          try {
+            if (interaction.deferred || interaction.replied) {
+              await interaction.editReply({ embeds: [errorEmbed], ephemeral: true });
+            } else {
+              await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
+            }
+          } catch (replyError) {
+            console.error('Error sending error response:', replyError);
+            // Fallback to simple text message if embed fails
+            try {
+              await interaction.followUp({ 
+                content: `❌ **Setup Failed:** ${errorDescription}\n\n💡 **Solution:** ${errorSolution}`, 
+                ephemeral: true 
+              });
+            } catch (followupError) {
+              console.error('All response methods failed:', followupError);
+            }
+          }
         }
-        return;
-      }
+      return;
     }
-    
-    await interaction.deferReply({ ephemeral: true });
+  }
     
     const subcommand = interaction.options.getSubcommand();
+    
+    // Handle setup subcommand BEFORE deferring reply
+    if (subcommand === 'setup') {
+      // Show modal for custom provider setup without deferring
+      const modal = new ModalBuilder()
+        .setCustomId('custom_provider_modal')
+        .setTitle('Setup Custom AI Provider');
+
+      const nameInput = new TextInputBuilder()
+        .setCustomId('provider_name')
+        .setLabel('Provider Name')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('e.g., MyCustomAI')
+        .setRequired(true)
+        .setMaxLength(50);
+
+      const endpointInput = new TextInputBuilder()
+        .setCustomId('provider_endpoint')
+        .setLabel('API Endpoint')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('https://api.example.com/v1')
+        .setRequired(true)
+        .setMaxLength(200);
+
+      const modelInput = new TextInputBuilder()
+        .setCustomId('provider_model')
+        .setLabel('Default Model')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('gpt-3.5-turbo')
+        .setRequired(true)
+        .setMaxLength(100);
+
+      const descriptionInput = new TextInputBuilder()
+        .setCustomId('provider_description')
+        .setLabel('Description (Optional)')
+        .setStyle(TextInputStyle.Paragraph)
+        .setPlaceholder('A brief description of this provider...')
+        .setRequired(false)
+        .setMaxLength(500);
+
+      const authHeaderInput = new TextInputBuilder()
+        .setCustomId('provider_auth_header')
+        .setLabel('Authorization Header (Optional)')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('Bearer or Authorization (leave empty for default)')
+        .setRequired(false)
+        .setMaxLength(50);
+
+      const firstActionRow = new ActionRowBuilder().addComponents(nameInput);
+      const secondActionRow = new ActionRowBuilder().addComponents(endpointInput);
+      const thirdActionRow = new ActionRowBuilder().addComponents(modelInput);
+      const fourthActionRow = new ActionRowBuilder().addComponents(descriptionInput);
+      const fifthActionRow = new ActionRowBuilder().addComponents(authHeaderInput);
+
+      modal.addComponents(firstActionRow, secondActionRow, thirdActionRow, fourthActionRow, fifthActionRow);
+
+      await interaction.showModal(modal);
+      return; // IMPORTANT: Return here to prevent further execution
+    }
+    
+    // NOW defer reply for other subcommands
+    await interaction.deferReply({ ephemeral: true });
     
     // First check if the user has an API key for most subcommands
     const apiKey = await getUserApiKey(interaction.user.id);
@@ -333,63 +506,6 @@ module.exports = {
           await interaction.editReply({ embeds: [timeoutEmbed], components: [] });
         }
       });
-    }
-    else if (subcommand === 'setup') {
-      // Show modal for custom provider setup
-      const modal = new ModalBuilder()
-        .setCustomId('custom_provider_modal')
-        .setTitle('Setup Custom AI Provider');
-
-      const nameInput = new TextInputBuilder()
-        .setCustomId('provider_name')
-        .setLabel('Provider Name')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('e.g., MyCustomAI')
-        .setRequired(true)
-        .setMaxLength(50);
-
-      const endpointInput = new TextInputBuilder()
-        .setCustomId('provider_endpoint')
-        .setLabel('API Endpoint')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('https://api.example.com/v1')
-        .setRequired(true)
-        .setMaxLength(200);
-
-      const modelInput = new TextInputBuilder()
-        .setCustomId('provider_model')
-        .setLabel('Default Model')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('gpt-3.5-turbo')
-        .setRequired(true)
-        .setMaxLength(100);
-
-      const descriptionInput = new TextInputBuilder()
-        .setCustomId('provider_description')
-        .setLabel('Description (Optional)')
-        .setStyle(TextInputStyle.Paragraph)
-        .setPlaceholder('A brief description of this provider...')
-        .setRequired(false)
-        .setMaxLength(500);
-
-      const authHeaderInput = new TextInputBuilder()
-        .setCustomId('provider_auth_header')
-        .setLabel('Authorization Header (Optional)')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('Bearer or Authorization (leave empty for default)')
-        .setRequired(false)
-        .setMaxLength(50);
-
-      const firstActionRow = new ActionRowBuilder().addComponents(nameInput);
-      const secondActionRow = new ActionRowBuilder().addComponents(endpointInput);
-      const thirdActionRow = new ActionRowBuilder().addComponents(modelInput);
-      const fourthActionRow = new ActionRowBuilder().addComponents(descriptionInput);
-      const fifthActionRow = new ActionRowBuilder().addComponents(authHeaderInput);
-
-      modal.addComponents(firstActionRow, secondActionRow, thirdActionRow, fourthActionRow, fifthActionRow);
-
-      await interaction.showModal(modal);
-      return;
     }
     else if (subcommand === 'custom') {
       const action = interaction.options.getString('action');
