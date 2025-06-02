@@ -11,10 +11,10 @@ const executeKick = require('./commandExecutors/Moderation/kickCommand');
 const executeBan = require('./commandExecutors/Moderation/banCommand');
 const executeUnmute = require('./commandExecutors/Moderation/unmuteCommand');
 const executeClear = require('./commandExecutors/Utils/clearCommand');
-const executeLock = require('./commandExecutors/Moderation/lockCommand');
-const executeUnlock = require('./commandExecutors/Moderation/unlockCommand');
-const { executeAddRole, executeRemoveRole } = require('./commandExecutors/Moderation/roleCommand');
+const { executeAddRole, executeRemoveRole, executeCreateRole, executeDeleteRole, executeEditRole, executeMoveRole } = require('./commandExecutors/Moderation/roleCommand');
 const { executeChangeNickname } = require('./commandExecutors/Moderation/nicknameCommand');
+const { executeCreateChannel, executeDeleteChannel, executeEditChannel, executeCloneChannel, executeLockChannel, executeUnlockChannel } = require('./commandExecutors/Moderation/channelCommand');
+
 
 
 // Helper function to check if a user has the required permissions for a command
@@ -41,11 +41,22 @@ function hasPermission(member, command) {
     
     case 'add_role':
     case 'remove_role':
+    case 'create_role':
+    case 'delete_role':
+    case 'edit_role':
+    case 'move_role':
       return member.permissions.has(PermissionsBitField.Flags.ManageRoles);
     case 'change_nickname':
       // For nickname changes, check if it's self or others
       return member.permissions.has(PermissionsBitField.Flags.ChangeNickname) || 
              member.permissions.has(PermissionsBitField.Flags.ManageNicknames);
+    case 'lock':
+    case 'unlock':
+    case 'create_channel':
+    case 'delete_channel':
+    case 'edit_channel':
+    case 'clone_channel':
+      return member.permissions.has(PermissionsBitField.Flags.ManageChannels);
     default:
       return false;
   }
@@ -216,12 +227,12 @@ async function handleCommand(message, command) {
         embedColor = 0x00CCFF; // Light Blue
         break;
       case 'lock':
-        result = await executeLock(message, command);
+        result = await executeLockChannel(message, command);
         embedTitle = '🔒 Channel Locked';
         embedColor = 0xFF6600; // Orange
         break;
       case 'unlock':
-        result = await executeUnlock(message, command);
+        result = await executeUnlockChannel(message, command);
         embedTitle = '🔓 Channel Unlocked';
         embedColor = 0x00FF66; // Green
         break;
@@ -239,6 +250,46 @@ async function handleCommand(message, command) {
         result = await executeChangeNickname(message, command);
         embedTitle = '📝 Nickname Changed';
         embedColor = 0x00FF9F;
+        break;
+      case 'create_role':
+        result = await executeCreateRole(message, command);
+        embedTitle = '🎭 Role Created';
+        embedColor = 0x9B59B6;
+        break;
+      case 'delete_role':
+        result = await executeDeleteRole(message, command);
+        embedTitle = '🗑️ Role Deleted';
+        embedColor = 0xFF0000;
+        break;
+      case 'edit_role':
+        result = await executeEditRole(message, command);
+        embedTitle = '✏️ Role Edited';
+        embedColor = 0x3498db;
+        break;
+      case 'move_role':
+        result = await executeMoveRole(message, command);
+        embedTitle = '📍 Role Moved';
+        embedColor = 0x9B59B6;
+        break;
+      case 'create_channel':
+        result = await executeCreateChannel(message, command);
+        embedTitle = '🏗️ Channel Created';
+        embedColor = 0x00FF00;
+        break;
+      case 'delete_channel':
+        result = await executeDeleteChannel(message, command);
+        embedTitle = '🗑️ Channel Deleted';
+        embedColor = 0xFF0000;
+        break;
+      case 'edit_channel':
+        result = await executeEditChannel(message, command);
+        embedTitle = '✏️ Channel Edited';
+        embedColor = 0x3498db;
+        break;
+      case 'clone_channel':
+        result = await executeCloneChannel(message, command);
+        embedTitle = '📋 Channel Cloned';
+        embedColor = 0x9B59B6;
         break;
       default:
         result = { success: false, message: `Unknown command: ${command.function}` };
@@ -361,9 +412,20 @@ function getRequiredPermissionName(commandFunction) {
       return 'Manage Channels';
     case 'add_role':
     case 'remove_role':
+    case 'create_role':
+    case 'delete_role':
+    case 'edit_role':
+    case 'move_role':
       return 'Manage Roles';
     case 'change_nickname':
       return 'Change Nickname / Manage Nicknames';
+    case 'lock':
+    case 'unlock':
+    case 'create_channel':
+    case 'delete_channel':
+    case 'edit_channel':
+    case 'clone_channel':
+      return 'Manage Channels';
     default:
       return 'Undefined';
   }

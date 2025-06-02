@@ -1,4 +1,135 @@
-const { executeAddRole, executeRemoveRole } = require('../commands/commandExecutors/Moderation/roleCommand');
+
+const channelManagementFunctions = [
+  {
+    name: "create_channel",
+    description: "Create a new text or voice channel. Requires Manage Channels permission.",
+    parameters: {
+      type: "object",
+      properties: {
+        channelName: {
+          type: "string",
+          description: "Name of the new channel"
+        },
+        channelType: {
+          type: "string",
+          description: "Type of channel ('text' or 'voice')",
+          enum: ["text", "voice"]
+        },
+        category: {
+          type: "string",
+          description: "Category name or ID to place the channel in"
+        },
+        topic: {
+          type: "string",
+          description: "Channel topic (text channels only)"
+        },
+        slowmode: {
+          type: "string",
+          description: "Slowmode in seconds (0-21600, text channels only)"
+        },
+        nsfw: {
+          type: "boolean",
+          description: "Whether the channel is NSFW (text channels only)"
+        }
+      },
+      required: ["channelName"]
+    }
+  },
+  {
+    name: "delete_channel",
+    description: "Delete a channel. Requires Manage Channels permission.",
+    parameters: {
+      type: "object",
+      properties: {
+        channelId: {
+          type: "string",
+          description: "The Discord channel ID to delete"
+        }
+      },
+      required: ["channelId"]
+    }
+  },
+  {
+    name: "edit_channel",
+    description: "Edit channel properties. Requires Manage Channels permission.",
+    parameters: {
+      type: "object",
+      properties: {
+        channelId: {
+          type: "string",
+          description: "The Discord channel ID to edit"
+        },
+        name: {
+          type: "string",
+          description: "New channel name"
+        },
+        topic: {
+          type: "string",
+          description: "New channel topic (text channels only)"
+        },
+        slowmode: {
+          type: "string",
+          description: "New slowmode in seconds (0-21600, text channels only)"
+        },
+        nsfw: {
+          type: "boolean",
+          description: "Whether the channel is NSFW (text channels only)"
+        },
+        position: {
+          type: "number",
+          description: "New position in channel list"
+        }
+      },
+      required: ["channelId"]
+    }
+  },
+  {
+    name: "clone_channel",
+    description: "Clone a channel with its permissions. Requires Manage Channels permission.",
+    parameters: {
+      type: "object",
+      properties: {
+        channelId: {
+          type: "string",
+          description: "The Discord channel ID to clone"
+        },
+        newName: {
+          type: "string",
+          description: "Name for the cloned channel (optional)"
+        }
+      },
+      required: ["channelId"]
+    }
+  },
+  {
+    name: "lock_channel",
+    description: "Lock the current channel or a specific channel by ID, preventing members from sending messages",
+    parameters: {
+      type: "object",
+      properties: {
+        channel_id: {
+          type: "string",
+          description: "ID of the channel to lock (optional - if not provided, will lock current channel)"
+        }
+      },
+      required: []
+    }
+  },
+  {
+    name: "unlock_channel", 
+    description: "Unlock the current channel or a specific channel by ID, allowing members to send messages again",
+    parameters: {
+      type: "object",
+      properties: {
+        channel_id: {
+          type: "string",
+          description: "ID of the channel to unlock (optional - if not provided, will unlock current channel)"
+        }
+      },
+      required: []
+    }
+  }
+];
 
 const roleManagementFunctions = [
   {
@@ -36,8 +167,113 @@ const roleManagementFunctions = [
       },
       required: ["userId", "roleId"]
     }
+  },
+  {
+    name: "create_role",
+    description: "Create a new role in the guild. Requires Manage Roles permission.",
+    parameters: {
+      type: "object",
+      properties: {
+        roleName: {
+          type: "string",
+          description: "Name of the new role"
+        },
+        color: {
+          type: "string",
+          description: "Role color (hex code like #ff0000 or color name)"
+        },
+        permissions: {
+          type: "array",
+          items: {
+            type: "string"
+          },
+          description: "Array of permission names (e.g., ['SendMessages', 'ReadMessageHistory'])"
+        },
+        mentionable: {
+          type: "boolean",
+          description: "Whether the role can be mentioned by everyone"
+        },
+        hoist: {
+          type: "boolean",
+          description: "Whether the role should be displayed separately in the member list"
+        }
+      },
+      required: ["roleName"]
+    }
+  },
+  {
+    name: "delete_role",
+    description: "Delete a role from the guild. Requires Manage Roles permission and proper role hierarchy.",
+    parameters: {
+      type: "object",
+      properties: {
+        roleId: {
+          type: "string",
+          description: "The Discord role ID to delete"
+        }
+      },
+      required: ["roleId"]
+    }
+  },
+  {
+    name: "edit_role",
+    description: "Edit a role's properties. Requires Manage Roles permission and proper role hierarchy.",
+    parameters: {
+      type: "object",
+      properties: {
+        roleId: {
+          type: "string",
+          description: "The Discord role ID to edit"
+        },
+        name: {
+          type: "string",
+          description: "New name for the role"
+        },
+        color: {
+          type: "string",
+          description: "New color for the role (hex code like #ff0000)"
+        },
+        permissions: {
+          type: "array",
+          items: {
+            type: "string"
+          },
+          description: "Array of permission names"
+        },
+        mentionable: {
+          type: "boolean",
+          description: "Whether the role can be mentioned by everyone"
+        },
+        hoist: {
+          type: "boolean",
+          description: "Whether the role should be displayed separately in the member list"
+        }
+      },
+      required: ["roleId"]
+    }
+  },
+  {
+    name: "move_role",
+    description: "Move a role's position in the hierarchy. Requires Manage Roles permission.",
+    parameters: {
+      type: "object",
+      properties: {
+        roleId: {
+          type: "string",
+          description: "The Discord role ID to move"
+        },
+        position: {
+          type: "number",
+          description: "Specific position to move the role to"
+        },
+        direction: {
+          type: "string",
+          description: "Direction to move the role ('up' or 'down')"
+        }
+      },
+      required: ["roleId"]
+    }
   }
-  // Removed list_roles function
 ];
 
 const moderationFunctions = [
@@ -106,34 +342,6 @@ const moderationFunctions = [
       required: ["userId"]
     }
   },
-  {
-    name: "lock_channel",
-    description: "Lock the current channel or a specific channel by ID, preventing members from sending messages",
-    parameters: {
-      type: "object",
-      properties: {
-        channel_id: {
-          type: "string",
-          description: "ID of the channel to lock (optional - if not provided, will lock current channel)"
-        }
-      },
-      required: []
-    }
-  },
-  {
-    name: "unlock_channel", 
-    description: "Unlock the current channel or a specific channel by ID, allowing members to send messages again",
-    parameters: {
-      type: "object",
-      properties: {
-        channel_id: {
-          type: "string",
-          description: "ID of the channel to unlock (optional - if not provided, will unlock current channel)"
-        }
-      },
-      required: []
-    }
-  },
   // Add role management functions to moderation functions
   ...roleManagementFunctions
 ];
@@ -193,6 +401,84 @@ function convertFunctionCallToCommand(functionCall) {
         parameters: {
           userId: args.userId,
           nickname: args.nickname || null
+        }
+      };
+    case 'create_role':
+      return {
+        function: 'create_role',
+        parameters: {
+          roleName: args.roleName,
+          color: args.color,
+          permissions: args.permissions,
+          mentionable: args.mentionable,
+          hoist: args.hoist
+        }
+      };
+    case 'delete_role':
+      return {
+        function: 'delete_role',
+        parameters: {
+          roleId: args.roleId
+        }
+      };
+    case 'edit_role':
+      return {
+        function: 'edit_role',
+        parameters: {
+          roleId: args.roleId,
+          name: args.name,
+          color: args.color,
+          permissions: args.permissions,
+          mentionable: args.mentionable,
+          hoist: args.hoist
+        }
+      };
+    case 'move_role':
+      return {
+        function: 'move_role',
+        parameters: {
+          roleId: args.roleId,
+          position: args.position,
+          direction: args.direction
+        }
+      };
+    case 'create_channel':
+      return {
+        function: 'create_channel',
+        parameters: {
+          channelName: args.channelName,
+          channelType: args.channelType,
+          category: args.category,
+          topic: args.topic,
+          slowmode: args.slowmode,
+          nsfw: args.nsfw
+        }
+      };
+    case 'delete_channel':
+      return {
+        function: 'delete_channel',
+        parameters: {
+          channelId: args.channelId
+        }
+      };
+    case 'edit_channel':
+      return {
+        function: 'edit_channel',
+        parameters: {
+          channelId: args.channelId,
+          name: args.name,
+          topic: args.topic,
+          slowmode: args.slowmode,
+          nsfw: args.nsfw,
+          position: args.position
+        }
+      };
+    case 'clone_channel':
+      return {
+        function: 'clone_channel',
+        parameters: {
+          channelId: args.channelId,
+          newName: args.newName
         }
       };
 

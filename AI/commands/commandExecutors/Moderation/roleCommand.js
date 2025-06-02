@@ -131,6 +131,118 @@ async function executeAddRole(message, command) {
 }
 
 /**
+ * Create a new role
+ */
+async function executeCreateRole(message, command) {
+  try {
+    const { roleName, color, permissions, mentionable, hoist } = command.parameters;
+    
+    if (!roleName) {
+      return {
+        success: false,
+        message: 'Missing required parameter: roleName'
+      };
+    }
+
+    const guild = message.guild;
+    const executor = message.member;
+
+    // Check if user has permission to manage roles
+    if (!executor.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
+      return {
+        success: false,
+        message: 'You need "Manage Roles" permission to create roles'
+      };
+    }
+
+    // Check if role name already exists
+    const existingRole = guild.roles.cache.find(role => role.name.toLowerCase() === roleName.toLowerCase());
+    if (existingRole) {
+      return {
+        success: false,
+        message: `Role "${roleName}" already exists`
+      };
+    }
+
+    // Prepare role options
+    const roleOptions = {
+      name: roleName,
+      mentionable: mentionable || false,
+      hoist: hoist || false
+    };
+
+    // Handle color parameter
+    if (color) {
+      // Support hex colors (#ffffff), color names, or numbers
+      if (typeof color === 'string') {
+        if (color.startsWith('#')) {
+          roleOptions.color = color;
+        } else {
+          // Try to parse as hex without #
+          roleOptions.color = `#${color}`;
+        }
+      } else if (typeof color === 'number') {
+        roleOptions.color = color;
+      }
+    }
+
+    // Handle permissions parameter
+    if (permissions && Array.isArray(permissions)) {
+      const validPermissions = [];
+      for (const perm of permissions) {
+        if (PermissionsBitField.Flags[perm]) {
+          validPermissions.push(PermissionsBitField.Flags[perm]);
+        }
+      }
+      if (validPermissions.length > 0) {
+        roleOptions.permissions = validPermissions;
+      }
+    }
+
+    // Create the role
+    const newRole = await guild.roles.create(roleOptions);
+
+    // Position the role below the executor's highest role (if possible)
+    try {
+      const executorHighestRole = executor.roles.highest;
+      if (executorHighestRole.position > 1) {
+        await newRole.setPosition(executorHighestRole.position - 1);
+      }
+    } catch (positionError) {
+      console.log('Could not set role position:', positionError.message);
+    }
+
+    return {
+      success: true,
+      message: `Successfully created role "${newRole.name}"`,
+      embed: new EmbedBuilder()
+        .setColor(newRole.color || 0x99AAB5)
+        .setTitle('✅ Role Created')
+        .setDescription(`**${newRole.name}** has been created successfully`)
+        .addFields([
+          { name: 'Role Name', value: newRole.name, inline: true },
+          { name: 'Role ID', value: newRole.id, inline: true },
+          { name: 'Color', value: newRole.hexColor, inline: true },
+          { name: 'Position', value: newRole.position.toString(), inline: true },
+          { name: 'Mentionable', value: newRole.mentionable ? 'Yes' : 'No', inline: true },
+          { name: 'Hoisted', value: newRole.hoist ? 'Yes' : 'No', inline: true },
+          { name: 'Created By', value: executor.user.tag, inline: true },
+          { name: 'Members', value: '0', inline: true }
+        ])
+        .setTimestamp()
+        .setFooter({ text: 'Iris AI Role Management' })
+    };
+
+  } catch (error) {
+    console.error('Error in executeCreateRole:', error);
+    return {
+      success: false,
+      message: `Error creating role: ${error.message}`
+    };
+  }
+}
+
+/**
  * Remove role from a member
  */
 async function executeRemoveRole(message, command) {
@@ -224,87 +336,340 @@ async function executeRemoveRole(message, command) {
 }
 
 /**
- * List member's roles and available actions
+ * Delete a role
  */
-async function executeListRoles(message, command) {
+async function executeDeleteRole(message, command) {
   try {
-    const { userId } = command.parameters;
+    const { roleId } = command.parameters;
     
-    const guild = message.guild;
-    const executor = message.member;
-    const target = userId ? await guild.members.fetch(userId) : executor;
-
-    if (!target) {
+    if (!roleId) {
       return {
         success: false,
-        message: 'Target member not found'
+        message: 'Missing required parameter: roleId'
       };
     }
 
-    const userRoles = target.roles.cache
-      .filter(role => role.name !== '@everyone')
-      .sort((a, b) => b.position - a.position);
+    const guild = message.guild;
+    const executor = message.member;
+    const role = guild.roles.cache.get(roleId);
 
-    const actions = getAvailableActions(executor, target);
-
-    const embed = new EmbedBuilder()
-      .setColor(0x3498db)
-      .setTitle(`🎭 Role Information for ${target.user.username}`)
-      .setThumbnail(target.user.displayAvatarURL())
-      .setTimestamp();
-
-    // Current roles
-    if (userRoles.size > 0) {
-      const roleList = userRoles.map(role => {
-        const managable = actions.managableRoles?.find(r => r.id === role.id);
-        const indicator = managable ? (managable.canRemove ? '🔧' : '') : '';
-        return `${indicator} **${role.name}** (${role.members.size} members)`;
-      }).join('\n');
-
-      embed.addFields([
-        { name: `Current Roles (${userRoles.size})`, value: roleList, inline: false }
-      ]);
-    } else {
-      embed.addFields([
-        { name: 'Current Roles', value: 'No roles assigned', inline: false }
-      ]);
+    if (!role) {
+      return {
+        success: false,
+        message: 'Role not found'
+      };
     }
 
-    // Available actions
-    if (target.id !== executor.id && actions.managableRoles?.length > 0) {
-      const addableRoles = actions.managableRoles
-        .filter(role => role.canAdd)
-        .slice(0, 10); // Limit to 10 for embed space
-
-      if (addableRoles.length > 0) {
-        const addableList = addableRoles.map(role => 
-          `➕ **${role.name}** (${role.memberCount} members)`
-        ).join('\n');
-
-        embed.addFields([
-          { name: 'Roles You Can Add', value: addableList, inline: false }
-        ]);
-      }
+    // Check if user has permission to manage roles
+    if (!executor.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
+      return {
+        success: false,
+        message: 'You need "Manage Roles" permission to delete roles'
+      };
     }
 
-    // Restrictions
-    if (actions.restrictions?.length > 0) {
-      embed.addFields([
-        { name: '⚠️ Restrictions', value: actions.restrictions.join('\n'), inline: false }
-      ]);
+    // Check if role can be deleted (hierarchy rules)
+    if (role.position >= executor.roles.highest.position) {
+      return {
+        success: false,
+        message: 'You cannot delete roles higher than or equal to your highest role'
+      };
     }
+
+    // Check if role is managed (bot roles)
+    if (role.managed) {
+      return {
+        success: false,
+        message: 'Cannot delete managed roles (bot roles)'
+      };
+    }
+
+    // Check if it's @everyone role
+    if (role.id === guild.id) {
+      return {
+        success: false,
+        message: 'Cannot delete the @everyone role'
+      };
+    }
+
+    const roleName = role.name;
+    const memberCount = role.members.size;
+
+    // Delete the role
+    await role.delete();
 
     return {
       success: true,
-      message: `Role information for ${target.user.username}`,
-      embed
+      message: `Successfully deleted role "${roleName}"`,
+      embed: new EmbedBuilder()
+        .setColor(0xFF0000)
+        .setTitle('🗑️ Role Deleted')
+        .setDescription(`**${roleName}** has been deleted successfully`)
+        .addFields([
+          { name: 'Role Name', value: roleName, inline: true },
+          { name: 'Previous Members', value: memberCount.toString(), inline: true },
+          { name: 'Deleted By', value: executor.user.tag, inline: true }
+        ])
+        .setTimestamp()
+        .setFooter({ text: 'Iris AI Role Management' })
     };
 
   } catch (error) {
-    console.error('Error in executeListRoles:', error);
+    console.error('Error in executeDeleteRole:', error);
     return {
       success: false,
-      message: `Error listing roles: ${error.message}`
+      message: `Error deleting role: ${error.message}`
+    };
+  }
+}
+
+/**
+ * Edit a role's properties
+ */
+async function executeEditRole(message, command) {
+  try {
+    const { roleId, name, color, permissions, mentionable, hoist } = command.parameters;
+    
+    if (!roleId) {
+      return {
+        success: false,
+        message: 'Missing required parameter: roleId'
+      };
+    }
+
+    const guild = message.guild;
+    const executor = message.member;
+    const role = guild.roles.cache.get(roleId);
+
+    if (!role) {
+      return {
+        success: false,
+        message: 'Role not found'
+      };
+    }
+
+    // Check if user has permission to manage roles
+    if (!executor.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
+      return {
+        success: false,
+        message: 'You need "Manage Roles" permission to edit roles'
+      };
+    }
+
+    // Check if role can be edited (hierarchy rules)
+    if (role.position >= executor.roles.highest.position) {
+      return {
+        success: false,
+        message: 'You cannot edit roles higher than or equal to your highest role'
+      };
+    }
+
+    // Check if role is managed (bot roles)
+    if (role.managed) {
+      return {
+        success: false,
+        message: 'Cannot edit managed roles (bot roles)'
+      };
+    }
+
+    // Check if it's @everyone role
+    if (role.id === guild.id && name) {
+      return {
+        success: false,
+        message: 'Cannot change the name of @everyone role'
+      };
+    }
+
+    // Prepare edit options
+    const editOptions = {};
+    
+    if (name !== undefined) {
+      // Check if new name already exists
+      const existingRole = guild.roles.cache.find(r => r.name.toLowerCase() === name.toLowerCase() && r.id !== roleId);
+      if (existingRole) {
+        return {
+          success: false,
+          message: `Role name "${name}" already exists`
+        };
+      }
+      editOptions.name = name;
+    }
+
+    if (color !== undefined) {
+      if (typeof color === 'string') {
+        if (color.startsWith('#')) {
+          editOptions.color = color;
+        } else {
+          editOptions.color = `#${color}`;
+        }
+      } else if (typeof color === 'number') {
+        editOptions.color = color;
+      }
+    }
+
+    if (permissions !== undefined && Array.isArray(permissions)) {
+      const validPermissions = [];
+      for (const perm of permissions) {
+        if (PermissionsBitField.Flags[perm]) {
+          validPermissions.push(PermissionsBitField.Flags[perm]);
+        }
+      }
+      if (validPermissions.length > 0) {
+        editOptions.permissions = validPermissions;
+      }
+    }
+
+    if (mentionable !== undefined) {
+      editOptions.mentionable = mentionable;
+    }
+
+    if (hoist !== undefined) {
+      editOptions.hoist = hoist;
+    }
+
+    // Edit the role
+    const oldValues = {
+      name: role.name,
+      color: role.hexColor,
+      mentionable: role.mentionable,
+      hoist: role.hoist
+    };
+
+    await role.edit(editOptions);
+
+    const changes = [];
+    if (editOptions.name) changes.push(`Name: ${oldValues.name} → ${role.name}`);
+    if (editOptions.color) changes.push(`Color: ${oldValues.color} → ${role.hexColor}`);
+    if (editOptions.mentionable !== undefined) changes.push(`Mentionable: ${oldValues.mentionable ? 'Yes' : 'No'} → ${role.mentionable ? 'Yes' : 'No'}`);
+    if (editOptions.hoist !== undefined) changes.push(`Hoisted: ${oldValues.hoist ? 'Yes' : 'No'} → ${role.hoist ? 'Yes' : 'No'}`);
+    if (editOptions.permissions) changes.push(`Permissions updated`);
+
+    return {
+      success: true,
+      message: `Successfully edited role "${role.name}"`,
+      embed: new EmbedBuilder()
+        .setColor(role.color || 0x99AAB5)
+        .setTitle('✏️ Role Edited')
+        .setDescription(`**${role.name}** has been edited successfully`)
+        .addFields([
+          { name: 'Role Name', value: role.name, inline: true },
+          { name: 'Role ID', value: role.id, inline: true },
+          { name: 'Color', value: role.hexColor, inline: true },
+          { name: 'Changes Made', value: changes.join('\n') || 'No changes', inline: false },
+          { name: 'Edited By', value: executor.user.tag, inline: true }
+        ])
+        .setTimestamp()
+        .setFooter({ text: 'Iris AI Role Management' })
+    };
+
+  } catch (error) {
+    console.error('Error in executeEditRole:', error);
+    return {
+      success: false,
+      message: `Error editing role: ${error.message}`
+    };
+  }
+}
+
+/**
+ * Move a role's position
+ */
+async function executeMoveRole(message, command) {
+  try {
+    const { roleId, position, direction } = command.parameters;
+    
+    if (!roleId) {
+      return {
+        success: false,
+        message: 'Missing required parameter: roleId'
+      };
+    }
+
+    const guild = message.guild;
+    const executor = message.member;
+    const role = guild.roles.cache.get(roleId);
+
+    if (!role) {
+      return {
+        success: false,
+        message: 'Role not found'
+      };
+    }
+
+    // Check if user has permission to manage roles
+    if (!executor.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
+      return {
+        success: false,
+        message: 'You need "Manage Roles" permission to move roles'
+      };
+    }
+
+    // Check if role can be moved (hierarchy rules)
+    if (role.position >= executor.roles.highest.position) {
+      return {
+        success: false,
+        message: 'You cannot move roles higher than or equal to your highest role'
+      };
+    }
+
+    // Check if role is managed (bot roles)
+    if (role.managed) {
+      return {
+        success: false,
+        message: 'Cannot move managed roles (bot roles)'
+      };
+    }
+
+    const oldPosition = role.position;
+    let newPosition;
+
+    if (position !== undefined) {
+      // Move to specific position
+      newPosition = Math.max(1, Math.min(position, executor.roles.highest.position - 1));
+    } else if (direction) {
+      // Move up or down
+      if (direction === 'up') {
+        newPosition = Math.min(role.position + 1, executor.roles.highest.position - 1);
+      } else if (direction === 'down') {
+        newPosition = Math.max(role.position - 1, 1);
+      } else {
+        return {
+          success: false,
+          message: 'Invalid direction. Use "up" or "down"'
+        };
+      }
+    } else {
+      return {
+        success: false,
+        message: 'Missing required parameter: position or direction'
+      };
+    }
+
+    // Move the role
+    await role.setPosition(newPosition);
+
+    return {
+      success: true,
+      message: `Successfully moved role "${role.name}" from position ${oldPosition} to ${newPosition}`,
+      embed: new EmbedBuilder()
+        .setColor(role.color || 0x99AAB5)
+        .setTitle('📍 Role Position Changed')
+        .setDescription(`**${role.name}** position has been updated`)
+        .addFields([
+          { name: 'Role Name', value: role.name, inline: true },
+          { name: 'Old Position', value: oldPosition.toString(), inline: true },
+          { name: 'New Position', value: role.position.toString(), inline: true },
+          { name: 'Moved By', value: executor.user.tag, inline: true }
+        ])
+        .setTimestamp()
+        .setFooter({ text: 'Iris AI Role Management' })
+    };
+
+  } catch (error) {
+    console.error('Error in executeMoveRole:', error);
+    return {
+      success: false,
+      message: `Error moving role: ${error.message}`
     };
   }
 }
@@ -312,5 +677,8 @@ async function executeListRoles(message, command) {
 module.exports = {
   executeAddRole,
   executeRemoveRole,
-  executeListRoles
+  executeCreateRole,
+  executeDeleteRole,
+  executeEditRole,
+  executeMoveRole
 };

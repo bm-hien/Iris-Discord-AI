@@ -9,34 +9,55 @@ function validateCommand(command) {
   // Check if it has required fields
   if (!command.function) return false;
   
-  // Validate command type - UPDATED to include nickname management
-  const validFunctions = ['mute', 'kick', 'ban', 'unmute', 'clear', 'lock', 'unlock', 'add_role', 'remove_role', 'change_nickname'];
+  // Validate command type - UPDATED to include all role functions
+  const validFunctions = ['mute', 'kick', 'ban', 'unmute', 'clear', 'lock', 'unlock', 'add_role', 'remove_role', 'change_nickname', 'create_role', 'delete_role', 'edit_role', 'move_role', 'create_channel', 'delete_channel', 'edit_channel', 'clone_channel'];
   if (!validFunctions.includes(command.function)) return false;
   
   // Role management and nickname commands have different structure
-  if (['add_role', 'remove_role', 'change_nickname'].includes(command.function)) {
+  if (['add_role', 'remove_role', 'change_nickname', 'create_role', 'delete_role', 'edit_role', 'move_role', 'create_channel', 'delete_channel', 'edit_channel', 'clone_channel'].includes(command.function)) {
     // Check for parameters object
     if (!command.parameters || typeof command.parameters !== 'object') {
       return false;
     }
-    
-    // Validate required parameters
-    if (!command.parameters.userId) {
-      return false;
+    if (command.function === 'create_channel') {
+      if (!command.parameters.channelName || typeof command.parameters.channelName !== 'string') {
+        return false;
+      }
     }
-    
-    // Validate userId format (Discord ID)
-    if (typeof command.parameters.userId !== 'string' || !/^\d{17,19}$/.test(command.parameters.userId.replace(/[<@!&>]/g, ''))) {
-      return false;
+    if (['delete_channel', 'edit_channel', 'clone_channel'].includes(command.function)) {
+      if (!command.parameters.channelId || typeof command.parameters.channelId !== 'string') {
+        return false;
+      }
     }
-    
-    // For role commands, also validate roleId
-    if (['add_role', 'remove_role'].includes(command.function)) {
-      if (!command.parameters.roleId) {
+    // Validate required parameters based on function
+    if (['add_role', 'remove_role', 'change_nickname'].includes(command.function)) {
+      if (!command.parameters.userId) {
         return false;
       }
       
-      if (typeof command.parameters.roleId !== 'string' || !/^\d{17,19}$/.test(command.parameters.roleId)) {
+      // Validate userId format (Discord ID)
+      if (typeof command.parameters.userId !== 'string' || !/^\d{17,19}$/.test(command.parameters.userId.replace(/[<@!&>]/g, ''))) {
+        return false;
+      }
+    }
+    
+    // For role commands that need roleId
+    if (['add_role', 'remove_role', 'delete_role', 'edit_role', 'move_role'].includes(command.function)) {
+      if (!command.parameters.roleId || typeof command.parameters.roleId !== 'string') {
+        return false;
+      }
+      
+      // Validate roleId format (Discord ID) - except for create_role which doesn't need it
+      if (!['create_role'].includes(command.function)) {
+        if (!/^\d{17,19}$/.test(command.parameters.roleId)) {
+          return false;
+        }
+      }
+    }
+    
+    // For create_role, validate roleName
+    if (command.function === 'create_role') {
+      if (!command.parameters.roleName || typeof command.parameters.roleName !== 'string') {
         return false;
       }
     }
