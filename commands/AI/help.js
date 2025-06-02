@@ -12,6 +12,7 @@ module.exports = {
         .addChoices(
           { name: '🤖 AI Features', value: 'ai' },
           { name: '🛡️ Moderation', value: 'moderation' },
+          { name: '📤 Message Management', value: 'messages' },
           { name: '⚙️ Configuration', value: 'config' },
           { name: '🎭 Role Management', value: 'roles' },
           { name: '📝 Nickname Management', value: 'nicknames' },
@@ -53,32 +54,29 @@ module.exports = {
         .setDescription('An error occurred while loading help information.')
         .setTimestamp();
 
-      if (interaction.deferred || interaction.replied) {
-        await interaction.editReply({ embeds: [errorEmbed] });
-      } else {
-        await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
-      }
+      await interaction.reply({ 
+        embeds: [errorEmbed], 
+        ephemeral: true 
+      }).catch(console.error);
     }
   }
 };
 
 function createAllHelpEmbeds() {
   const embeds = [];
+  const baseColor = 0x3498db;
 
   // 1. Overview & Introduction
   embeds.push(new EmbedBuilder()
-    .setColor(0x00D4FF)
-    .setTitle('🤖 Iris Discord AI Bot - Help Center')
+    .setColor(baseColor)
+    .setTitle('🤖 Welcome to Iris AI Bot!')
     .setDescription(
-      '**Welcome to Iris!** 🎉\n\n' +
-      'Iris is an advanced AI-powered Discord bot with intelligent conversation, ' +
-      'moderation capabilities, and multi-provider AI support.\n\n' +
-      '**🌟 Key Features:**\n' +
-      '• 🧠 **Multi-AI Support** - Gemini, OpenAI, Groq\n' +
-      '• 🛡️ **Smart Moderation** - Natural language commands\n' +
-      '• 🌐 **URL Analysis** - Analyze web content from links\n' +
-      '• 🖼️ **Media Processing** - Images, videos, documents\n' +
+      '**Your intelligent Discord assistant with advanced AI capabilities!**\n\n' +
+      '🎯 **Core Features:**\n' +
+      '• 🧠 **AI Chat** - Natural conversations with context memory\n' +
+      '• 🛡️ **Smart Moderation** - AI-powered server management\n' +
       '• 🎭 **Role Management** - Intelligent role assignment\n' +
+      '• 📤 **Message Management** - Send, pin, and react to messages\n' +
       '• 📝 **Nickname Management** - Change nicknames easily\n\n' +
       '**📚 Navigation:**\n' +
       'Use the buttons below to navigate through different help sections.'
@@ -96,51 +94,50 @@ function createAllHelpEmbeds() {
       }
     ])
     .setThumbnail('https://cdn.discordapp.com/avatars/1234567890/avatar.png') // Replace with your bot's avatar
-    .setFooter({ text: 'Iris AI Bot v1.0.1 • Page 1/7' })
+    .setFooter({ text: 'Iris AI Bot v1.0.2 • Page 1/8' })
     .setTimestamp()
   );
 
-  // 2. AI Features
+  // 2. AI Features & Capabilities
   embeds.push(new EmbedBuilder()
     .setColor(0x9B59B6)
     .setTitle('🧠 AI Features & Capabilities')
-    .setDescription(
-      '**Iris supports multiple AI providers for diverse capabilities:**\n\n' +
-      '**🔮 Supported Providers:**\n' +
-      '• **Gemini** - Google\'s latest AI with URL context\n' +
-      '• **OpenAI** - GPT models with advanced reasoning\n' +
-      '• **Groq** - Ultra-fast inference for quick responses\n\n'
-    )
+    .setDescription('**Experience the power of advanced AI conversation:**')
     .addFields([
       {
-        name: '🌐 URL Context Analysis',
-        value: '• Analyze web pages, articles, and documents\n• Support multiple URLs in one message\n• Smart content summarization\n• Source citation in responses',
+        name: '💬 Natural Conversations',
+        value: '• **Context Memory**: Remembers previous messages\n• **Smart Responses**: Understands complex questions\n• **Multi-Language**: Supports multiple languages\n• **Personality**: Friendly, helpful, and engaging',
         inline: false
       },
       {
-        name: '🖼️ Media Processing',
-        value: '• **Images**: Analysis, description, OCR\n• **Videos**: Frame analysis and description\n• **Documents**: PDF processing and analysis\n• Support for multiple formats',
+        name: '🖼️ Multimedia Processing',
+        value: '• **Image Analysis**: Describe and analyze images\n• **Document Reading**: PDF, text files, code files\n• **Video Processing**: Extract information from videos\n• **URL Context**: Fetch and analyze web content',
         inline: false
       },
       {
-        name: '💬 Conversation Features',
-        value: '• Context-aware conversations\n• Memory across messages\n• Personality customization\n• Multi-language support',
+        name: '🤖 AI Models Available',
+        value: '• **Gemini 2.0 Flash** - Latest Google AI (Default)\n• **Gemini 1.5 Pro** - Advanced reasoning\n• **Groq Models** - Ultra-fast responses\n• **Anthropic Claude** - Premium quality\n• **OpenAI GPT** - Industry standard',
         inline: false
       },
       {
-        name: '🔧 Usage Examples',
-        value: '```\n@Iris explain this image\n@Iris summarize this article: [URL]\n@Iris what do you think about this?\n@Iris help me with coding\n```',
+        name: '✨ Smart Features',
+        value: '• **Function Calling**: Execute Discord commands via AI\n• **Context Switching**: Handle multiple topics\n• **Error Recovery**: Graceful handling of issues\n• **Rate Limiting**: Fair usage for all users',
+        inline: false
+      },
+      {
+        name: '🎯 Usage Examples',
+        value: '```\n@Iris What\'s in this image?\n@Iris Explain this code file\n@Iris Help me moderate this server\n@Iris Translate this to Vietnamese\n```',
         inline: false
       }
     ])
-    .setFooter({ text: 'Iris AI Bot v1.0.1 • Page 2/7' })
+    .setFooter({ text: 'Iris AI Bot v1.0.2 • Page 2/8' })
     .setTimestamp()
   );
 
-  // 3. Moderation Commands
+  // 3. Moderation & Management
   embeds.push(new EmbedBuilder()
     .setColor(0xE74C3C)
-    .setTitle('🛡️ Moderation & Management')
+    .setTitle('🛡️ Moderation & Server Management')
     .setDescription(
       '**Natural language moderation commands - just tell Iris what to do!**\n\n' +
       '**🔐 Permission Requirements:**\n' +
@@ -154,32 +151,73 @@ function createAllHelpEmbeds() {
       },
       {
         name: '💬 Channel Management',
-        value: '```\n@Iris lock this channel\n@Iris unlock the channel\n@Iris clear 10 messages\n@Iris delete last 5 messages\n```',
+        value: '```\n@Iris create a new text channel "general-chat"\n@Iris delete the old announcements channel\n@Iris lock this channel for maintenance\n@Iris unlock the channel\n@Iris clear 10 messages\n```',
         inline: false
       },
       {
         name: '🎭 Role Management',
-        value: '```\n@Iris add Helper role to @user\n@Iris remove Moderator from @user\n@Iris give me the Member role\n```',
+        value: '```\n@Iris add Helper role to @user\n@Iris remove Moderator from @user\n@Iris create a new role called "VIP"\n@Iris give me the Member role\n```',
         inline: false
       },
       {
         name: '📝 Nickname Management',
         value: '```\n@Iris change my nickname to SuperDev\n@Iris set @user nickname to Moderator\n@Iris reset my nickname\n```',
         inline: false
+      },
+      {
+        name: '⚠️ Security Features',
+        value: '• **Permission Validation**: Checks Discord permissions\n• **Role Hierarchy**: Prevents privilege escalation\n• **Audit Logging**: All actions are logged\n• **Anti-Abuse**: Rate limiting and validation',
+        inline: false
       }
     ])
-    .setFooter({ text: 'Iris AI Bot v1.0.1 • Page 3/7' })
+    .setFooter({ text: 'Iris AI Bot v1.0.2 • Page 3/8' })
     .setTimestamp()
   );
 
-  // 4. Configuration Commands
+  // 4. Message Management (NEW)
   embeds.push(new EmbedBuilder()
-    .setColor(0x3498DB)
+    .setColor(0x00BFFF)
+    .setTitle('📤 Message Management')
+    .setDescription('**Send, pin, and react to messages with AI assistance:**')
+    .addFields([
+      {
+        name: '📨 Sending Messages',
+        value: '```\n@Iris send "Hello everyone!" to #general\n@Iris post this announcement in #updates\n@Iris send a welcome message to the bot channel\n```',
+        inline: false
+      },
+      {
+        name: '📌 Message Pinning',
+        value: '```\n@Iris pin this message\n@Iris pin message ID 1234567890\n@Iris unpin that announcement\n@Iris unpin the pinned message\n```',
+        inline: false
+      },
+      {
+        name: '😊 Reactions',
+        value: '```\n@Iris react with 👍 to that message\n@Iris add ✅ reaction to message ID 1234567890\n@Iris react with 🎉 to the announcement\n```',
+        inline: false
+      },
+      {
+        name: '⚠️ Requirements & Limits',
+        value: '• **Send Messages**: "Manage Messages" permission required\n• **Pin/Unpin**: "Manage Messages" permission required\n• **Reactions**: "Add Reactions" permission required\n• **Content Limits**: 1000 characters max per message\n• **Channel Restriction**: Cannot send to same channel you\'re in',
+        inline: false
+      },
+      {
+        name: '🔒 Safety Notes',
+        value: '• All mentions are automatically disabled for security\n• Links require "Manage Server" permission\n• Rate limiting prevents spam and abuse\n• Only designated channels are allowed\n• All actions are logged for moderation review',
+        inline: false
+      }
+    ])
+    .setFooter({ text: 'Iris AI Bot v1.0.2 • Page 4/8' })
+    .setTimestamp()
+  );
+
+  // 5. Configuration & Settings
+  embeds.push(new EmbedBuilder()
+    .setColor(0x2ECC71)
     .setTitle('⚙️ Configuration & Settings')
     .setDescription('**Customize Iris to fit your needs:**')
     .addFields([
       {
-        name: '🔑 API Key Management',
+        name: '🔑 Slash Commands',
         value: '• `/apikey set` - Set your personal API key\n• `/apikey check` - View current API key status\n• `/apikey remove` - Remove your API key\n• `/apikey info` - Get API key setup guide',
         inline: false
       },
@@ -199,11 +237,11 @@ function createAllHelpEmbeds() {
         inline: false
       }
     ])
-    .setFooter({ text: 'Iris AI Bot v1.0.1 • Page 4/7' })
+    .setFooter({ text: 'Iris AI Bot v1.0.2 • Page 5/8' })
     .setTimestamp()
   );
 
-  // 5. Role & Nickname Management
+  // 6. Role & Nickname Management
   embeds.push(new EmbedBuilder()
     .setColor(0xF39C12)
     .setTitle('🎭 Role & Nickname Management')
@@ -230,11 +268,11 @@ function createAllHelpEmbeds() {
         inline: false
       }
     ])
-    .setFooter({ text: 'Iris AI Bot v1.0.1 • Page 5/7' })
+    .setFooter({ text: 'Iris AI Bot v1.0.2 • Page 6/8' })
     .setTimestamp()
   );
 
-  // 6. API Keys & Performance
+  // 7. API Keys & Performance
   embeds.push(new EmbedBuilder()
     .setColor(0x1ABC9C)
     .setTitle('🔑 API Keys & Performance')
@@ -256,11 +294,11 @@ function createAllHelpEmbeds() {
         inline: false
       }
     ])
-    .setFooter({ text: 'Iris AI Bot v1.0.1 • Page 6/7' })
+    .setFooter({ text: 'Iris AI Bot v1.0.2 • Page 7/8' })
     .setTimestamp()
   );
 
-  // 7. Tips & Troubleshooting
+  // 8. Tips & Troubleshooting
   embeds.push(new EmbedBuilder()
     .setColor(0x95A5A6)
     .setTitle('💡 Tips, Tricks & Troubleshooting')
@@ -272,13 +310,18 @@ function createAllHelpEmbeds() {
         inline: false
       },
       {
+        name: '📤 Message Management Tips',
+        value: '• **Safe by Design**: All pings are automatically disabled\n• **Use Descriptions**: "Send announcement about server rules"\n• **Target Channels**: Specify exact channel names or IDs\n• **React Appropriately**: Use relevant emojis for context\n• **Check Permissions**: Ensure you have required permissions',
+        inline: false
+      },
+      {
         name: '🚀 Best Practices',
         value: '• Set up personal API key for best experience\n• Use appropriate commands for moderation\n• Check permissions before using admin features\n• Keep conversations focused for better context',
         inline: false
       },
       {
         name: '🔧 Common Issues & Solutions',
-        value: '**"No response from AI"**\n• Check API key status with `/apikey check`\n• Try switching models with `/model set`\n\n**"Permission denied"**\n• Verify Discord permissions\n• Check role hierarchy\n\n**"Function not working"**\n• Ensure bot has required permissions\n• Try rephrasing your command',
+        value: '**"No response from AI"**\n• Check API key status with `/apikey check`\n• Try switching models with `/model set`\n\n**"Permission denied"**\n• Verify Discord permissions\n• Check role hierarchy\n\n**"Cannot send message"**\n• Check "Manage Messages" permission\n• Verify target channel is allowed\n• Wait for rate limit cooldown\n\n**"Mentions not working"**\n• This is intentional for safety\n• All pings are disabled by design',
         inline: false
       },
       {
@@ -287,7 +330,7 @@ function createAllHelpEmbeds() {
         inline: false
       }
     ])
-    .setFooter({ text: 'Iris AI Bot v1.0.1 • Page 7/7 • Made with ❤️ by bm-hien' })
+    .setFooter({ text: 'Iris AI Bot v1.0.2 • Page 8/8 • Made with ❤️ by bm-hien' })
     .setTimestamp()
   );
 
@@ -295,38 +338,31 @@ function createAllHelpEmbeds() {
 }
 
 function createCategoryEmbed(category) {
-  const baseColor = 0x00D4FF;
-  
   switch (category) {
     case 'ai':
       return new EmbedBuilder()
         .setColor(0x9B59B6)
-        .setTitle('🧠 AI Features & Capabilities')
-        .setDescription('**Comprehensive AI-powered features:**')
+        .setTitle('🧠 AI Features')
+        .setDescription('**Advanced AI capabilities for natural conversations:**')
         .addFields([
           {
-            name: '🤖 Multi-Provider Support',
-            value: '• **Gemini**: Google\'s latest AI models\n• **OpenAI**: GPT-4 and GPT-3.5 models\n• **Groq**: Ultra-fast inference models\n• **Custom**: Support for custom endpoints',
+            name: '💬 Conversation Features',
+            value: '• **Context Memory**: Remembers conversation history\n• **Natural Language**: Understands complex requests\n• **Multi-Language**: Supports various languages\n• **Smart Responses**: Contextually appropriate answers',
             inline: false
-          },
-          {
-            name: '🌐 URL Context Analysis',
-            value: '• Analyze web pages and articles\n• Multi-URL comparison\n• Automatic content extraction\n• Smart summarization',
-            inline: true
           },
           {
             name: '🖼️ Media Processing',
-            value: '• Image analysis and description\n• Video frame processing\n• PDF document analysis\n• OCR text extraction',
-            inline: true
-          },
-          {
-            name: '💬 Conversation Features',
-            value: '• Context-aware responses\n• Memory across conversations\n• Personality customization\n• Multi-language support',
+            value: '• **Image Analysis**: Describe and analyze images\n• **Document Reading**: PDF, text, code files\n• **Video Processing**: Extract video information\n• **URL Context**: Analyze web content',
             inline: false
           },
           {
-            name: '🔧 Usage Examples',
-            value: '```\n@Iris analyze this image\n@Iris summarize: https://example.com\n@Iris what do you think?\n@Iris help with coding\n@Iris translate this to Spanish\n```',
+            name: '🤖 Available Models',
+            value: '• **Gemini 2.0 Flash** - Google\'s latest AI\n• **Gemini 1.5 Pro** - Advanced reasoning\n• **Groq Models** - Ultra-fast responses\n• **Claude & GPT** - Premium alternatives',
+            inline: false
+          },
+          {
+            name: '🎯 Usage Tips',
+            value: '• Mention @Iris to start conversations\n• Upload images for analysis\n• Share documents for reading\n• Include URLs for web content analysis',
             inline: false
           }
         ])
@@ -336,26 +372,65 @@ function createCategoryEmbed(category) {
       return new EmbedBuilder()
         .setColor(0xE74C3C)
         .setTitle('🛡️ Moderation Commands')
-        .setDescription('**Natural language moderation - just tell Iris what to do!**')
+        .setDescription('**AI-powered server moderation with natural language:**')
         .addFields([
           {
-            name: '👤 Member Actions',
-            value: '```\nMute @user for 1 hour\nKick @user for spam\nBan @user permanently\nUnmute @user\n```',
+            name: '👥 Member Actions',
+            value: '```\nMute @user for 1 hour\nKick @user for breaking rules\nBan @user permanently\nUnmute @user\n```',
             inline: false
           },
           {
-            name: '💬 Message Management',
-            value: '```\nClear 10 messages\nDelete last 5 messages\nRemove messages from @user\n```',
+            name: '💬 Channel Actions',
+            value: '```\nLock this channel\nUnlock the channel\nClear 10 messages\nDelete last 5 messages\n```',
             inline: false
           },
           {
-            name: '🔒 Channel Control',
-            value: '```\nLock this channel\nUnlock the channel\nLock #general for 30 minutes\n```',
+            name: '🔐 Requirements',
+            value: '• **Mute/Kick/Ban**: Appropriate moderation permissions\n• **Channel Lock**: "Manage Channels" permission\n• **Clear Messages**: "Manage Messages" permission\n• **Role Hierarchy**: Bot must be higher than target',
+            inline: false
+          },
+          {
+            name: '⚠️ Safety Features',
+            value: '• Permission validation before execution\n• Role hierarchy enforcement\n• Audit logging for all actions\n• Anti-abuse protection with rate limiting',
+            inline: false
+          }
+        ])
+        .setTimestamp();
+
+    case 'messages':
+      return new EmbedBuilder()
+        .setColor(0x00BFFF)
+        .setTitle('📤 Message Management')
+        .setDescription('**Send, pin, and react to messages with AI:**')
+        .addFields([
+          {
+            name: '📨 Sending Messages',
+            value: '```\nSend "Hello everyone!" to #general\nPost this announcement in #updates\nSend a message to the bot channel\n```',
+            inline: false
+          },
+          {
+            name: '📌 Message Pinning',
+            value: '```\nPin this message\nPin message ID 1234567890\nUnpin that announcement\n```',
+            inline: false
+          },
+          {
+            name: '😊 Reactions',
+            value: '```\nReact with 👍 to that message\nAdd ✅ reaction to message ID 1234567890\nReact with 🎉 to the announcement\n```',
+            inline: false
+          },
+          {
+            name: '🛡️ Security Features',
+            value: '• **No Pings**: All mentions disabled for safety\n• **Rate Limited**: 30 second cooldown between sends\n• **Content Filtered**: URL and spam protection\n• **Channel Whitelist**: Only safe channels allowed\n• **Permission Checked**: Proper Discord permissions required',
             inline: false
           },
           {
             name: '⚠️ Requirements',
-            value: '• Appropriate Discord permissions\n• Higher role than target user\n• Bot must have required permissions\n• Cannot action server owner',
+            value: '• **Send Messages**: "Manage Messages" permission\n• **Pin/Unpin**: "Manage Messages" permission\n• **Reactions**: "Add Reactions" permission\n• **Restrictions**: Cannot send to same channel\n• **Content Limits**: 1000 characters max',
+            inline: false
+          },
+          {
+            name: '🔒 Safety Notes',
+            value: '• All @everyone/@here mentions are disabled\n• Links require "Manage Server" permission\n• Rate limiting prevents spam\n• Only designated channels allowed\n• All actions are logged for moderation',
             inline: false
           }
         ])
@@ -363,23 +438,28 @@ function createCategoryEmbed(category) {
 
     case 'config':
       return new EmbedBuilder()
-        .setColor(0x3498DB)
-        .setTitle('⚙️ Configuration Commands')
-        .setDescription('**Customize your Iris experience:**')
+        .setColor(0x2ECC71)
+        .setTitle('⚙️ Configuration')
+        .setDescription('**Customize Iris settings and preferences:**')
         .addFields([
           {
-            name: '🔑 API Key Commands',
-            value: '• `/apikey set` - Set personal API key\n• `/apikey check` - Check key status\n• `/apikey remove` - Remove key\n• `/apikey info` - Setup guide',
+            name: '🔑 API Key Management',
+            value: '• `/apikey set` - Add your personal API key\n• `/apikey check` - View current status\n• `/apikey remove` - Remove your key\n• `/apikey info` - Setup instructions',
             inline: false
           },
           {
-            name: '🤖 Model Commands',
-            value: '• `/model set [model]` - Choose AI model\n• `/model list` - Available models\n• `/model info` - Model details\n• `/provider set [provider]` - Switch provider',
+            name: '🤖 Model Selection',
+            value: '• `/model set` - Choose AI model\n• `/model list` - View available models\n• `/model info` - Get model details\n• `/provider set` - Switch providers',
             inline: false
           },
           {
-            name: '💾 Data Commands',
-            value: '• `/clear` - Clear conversation history\n• `/history` - View conversation stats\n• `/export` - Export your data\n• `/settings` - Bot preferences',
+            name: '💾 Data Management',
+            value: '• `/clear` - Clear conversation history\n• `/history` - View conversation stats\n• `/export` - Export your data\n• `/settings` - Adjust preferences',
+            inline: false
+          },
+          {
+            name: '🎨 Personalization',
+            value: '• Custom response styles\n• Language preferences\n• Personality adjustments\n• Output formatting options',
             inline: false
           }
         ])
@@ -392,23 +472,23 @@ function createCategoryEmbed(category) {
         .setDescription('**Smart role assignment with AI assistance:**')
         .addFields([
           {
-            name: '➕ Adding Roles',
-            value: '```\nAdd Helper role to @user\nGive me the Member role\nAssign Moderator to @user\n```',
+            name: '👤 Self-Management',
+            value: '```\nAdd the Helper role to me\nGive me the Member role\nRemove VIP from me\n```',
             inline: false
           },
           {
-            name: '➖ Removing Roles',
-            value: '```\nRemove Admin from @user\nTake away Moderator role\nRemove my Helper role\n```',
+            name: '👥 Admin Management',
+            value: '```\nGive @user the Moderator role\nRemove Helper from @user\nAdd VIP role to @user\n```',
             inline: false
           },
           {
-            name: '🔒 Security Features',
-            value: '• **Self-Assignment**: Only lower roles\n• **Hierarchy Check**: Prevents privilege escalation\n• **Permission Validation**: Automatic checks\n• **Audit Logging**: Track all changes',
+            name: '🛠️ Role Creation',
+            value: '```\nCreate a new role called "VIP"\nMake a Developer role with blue color\nCreate Staff role with permissions\n```',
             inline: false
           },
           {
-            name: '⚠️ Limitations',
-            value: '• Cannot assign roles higher than yours\n• Cannot modify server owner roles\n• Requires "Manage Roles" permission\n• Bot must have higher role than target',
+            name: '🔒 Security',
+            value: '• **Hierarchy Protection**: Cannot assign higher roles\n• **Permission Validation**: Checks Discord permissions\n• **Self-Assignment Limits**: Only lower roles allowed\n• **Admin Override**: Admins can manage all roles',
             inline: false
           }
         ])
@@ -416,28 +496,28 @@ function createCategoryEmbed(category) {
 
     case 'nicknames':
       return new EmbedBuilder()
-        .setColor(0x8E44AD)
+        .setColor(0xFF6B6B)
         .setTitle('📝 Nickname Management')
-        .setDescription('**Change nicknames with natural language:**')
+        .setDescription('**Change nicknames with AI assistance:**')
         .addFields([
           {
-            name: '✏️ Changing Nicknames',
-            value: '```\nChange my nickname to Developer\nSet @user nickname to Helper\nRename @user to Moderator\n```',
+            name: '👤 Self-Management',
+            value: '```\nChange my nickname to Developer\nSet my nickname to SuperUser\nReset my nickname\n```',
             inline: false
           },
           {
-            name: '🔄 Resetting Nicknames',
-            value: '```\nReset my nickname\nRemove @user\'s nickname\nClear my display name\n```',
+            name: '👥 Admin Management',
+            value: '```\nChange @user nickname to Moderator\nSet @user\'s nickname to Helper\nReset @user\'s nickname\n```',
             inline: false
           },
           {
-            name: '📏 Rules & Limits',
-            value: '• **Length**: Maximum 32 characters\n• **Self-Change**: Change your own nickname\n• **Admin Change**: Modify others (with permission)\n• **Reset**: Return to original username',
+            name: '📏 Limitations',
+            value: '• **Length Limit**: 32 characters maximum\n• **Permission Required**: "Manage Nicknames" for others\n• **Hierarchy Respect**: Cannot change higher role nicknames\n• **Content Filter**: Appropriate names only',
             inline: false
           },
           {
-            name: '🔐 Permissions',
-            value: '• **Self**: "Change Nickname" permission\n• **Others**: "Manage Nicknames" permission\n• **Hierarchy**: Cannot change higher role users\n• **Owner**: Cannot change server owner',
+            name: '💡 Tips',
+            value: '• Use clear, descriptive commands\n• Specify exact nickname you want\n• Use "reset" to return to original username\n• Check permissions before trying to change others',
             inline: false
           }
         ])
@@ -446,27 +526,27 @@ function createCategoryEmbed(category) {
     case 'apikeys':
       return new EmbedBuilder()
         .setColor(0x1ABC9C)
-        .setTitle('🔑 API Key Setup Guide')
-        .setDescription('**Get unlimited access with your own API keys:**')
+        .setTitle('🔑 API Keys')
+        .setDescription('**Get unlimited usage with personal API keys:**')
         .addFields([
           {
-            name: '🔮 Gemini API (Recommended)',
-            value: '**Steps:**\n1. Visit: https://aistudio.google.com/app/apikey\n2. Sign in with Google account\n3. Click "Create API Key"\n4. Copy key (starts with "AIza...")\n5. Use `/apikey set` in Discord\n\n**Benefits:** URL context, free tier',
+            name: '🆓 Free Sources',
+            value: '**Gemini API (Recommended):**\n• Visit: https://aistudio.google.com/app/apikey\n• Free tier: 15 requests/minute\n\n**Groq API (Fast):**\n• Visit: https://console.groq.com/keys\n• Free tier: Very generous limits',
             inline: false
           },
           {
-            name: '⚡ Groq API (Fast)',
-            value: '**Steps:**\n1. Visit: https://console.groq.com/keys\n2. Create free account\n3. Generate new API key\n4. Copy key (starts with "gsk_...")\n5. Use `/apikey set` in Discord\n\n**Benefits:** Ultra-fast responses, generous limits',
+            name: '⚡ Benefits',
+            value: '• **Unlimited Usage**: No daily limits\n• **Faster Responses**: Direct API access\n• **Priority Processing**: Skip queues\n• **Advanced Features**: Latest models',
             inline: false
           },
           {
-            name: '🧠 OpenAI API (Advanced)',
-            value: '**Steps:**\n1. Visit: https://platform.openai.com/api-keys\n2. Create account (requires payment)\n3. Generate API key\n4. Copy key (starts with "sk-...")\n5. Use `/apikey set` in Discord\n\n**Benefits:** GPT-4, advanced reasoning',
+            name: '🔧 Setup',
+            value: '1. Get API key from provider\n2. Use `/apikey set` command\n3. Paste key securely\n4. Enjoy unlimited access!',
             inline: false
           },
           {
-            name: '🔒 Security & Privacy',
-            value: '• Keys are encrypted before storage\n• Only you can access your key\n• Use `/apikey remove` to delete\n• Keys never shared or logged',
+            name: '🔒 Security',
+            value: '• Keys are encrypted and stored securely\n• Only you can access your key\n• Can be removed anytime\n• Never shared or logged',
             inline: false
           }
         ])
@@ -474,28 +554,28 @@ function createCategoryEmbed(category) {
 
     case 'tips':
       return new EmbedBuilder()
-        .setColor(0x95A5A6)
-        .setTitle('💡 Tips, Tricks & Best Practices')
+        .setColor(0x17A2B8)
+        .setTitle('💡 Tips & Tricks')
         .setDescription('**Master Iris with these pro tips:**')
         .addFields([
           {
-            name: '🎯 Getting Better Responses',
-            value: '• **Be Specific**: "Analyze this error message" > "Help"\n• **Provide Context**: Include relevant details\n• **Use Examples**: Show what you want\n• **Ask Follow-ups**: Build on previous responses',
+            name: '🗣️ Natural Language Commands',
+            value: '• **Be Conversational**: "Hey Iris, can you mute that user?"\n• **Provide Context**: "Lock this channel for maintenance"\n• **Be Specific**: "Send welcome message to #general"\n• **Chain Actions**: Multiple commands in one message work!',
             inline: false
           },
           {
-            name: '🚀 Performance Tips',
-            value: '• **Set API Key**: Get unlimited usage\n• **Choose Right Model**: Gemini for URLs, Groq for speed\n• **Split Complex Tasks**: Break down big requests\n• **Use Attachments**: Images often worth 1000 words',
+            name: '📤 Message Management Tips',
+            value: '• **Safe by Design**: All pings are automatically disabled\n• **Use Descriptions**: "Send announcement about server rules"\n• **Target Channels**: Specify exact channel names\n• **React Appropriately**: Use relevant emojis for context',
             inline: false
           },
           {
-            name: '🛠️ Troubleshooting',
-            value: '**Common Issues:**\n• No response → Check `/apikey check`\n• Slow responses → Try Groq provider\n• Permission errors → Verify Discord permissions\n• Function errors → Rephrase command naturally',
+            name: '🎯 Best Practices',
+            value: '• Set up personal API key for unlimited usage\n• Use appropriate permissions for moderation\n• Keep conversations focused for better context\n• Upload relevant images for better AI understanding',
             inline: false
           },
           {
-            name: '💝 Advanced Features',
-            value: '• **Multi-URL Analysis**: Send multiple links\n• **Image + Text**: Combine for rich context\n• **Conversation Memory**: Reference earlier messages\n• **Custom Models**: Use `/model set` for specific needs',
+            name: '🚀 Advanced Features',
+            value: '• **Multi-Model**: Try different models for different tasks\n• **Context Memory**: Reference previous conversations\n• **Media Processing**: Upload documents and images\n• **Function Chaining**: Combine multiple actions',
             inline: false
           }
         ])
@@ -503,9 +583,9 @@ function createCategoryEmbed(category) {
 
     default:
       return new EmbedBuilder()
-        .setColor(baseColor)
-        .setTitle('❓ Unknown Category')
-        .setDescription('Sorry, that help category doesn\'t exist. Use `/help` without options to see all available help.')
+        .setColor(0xFF0000)
+        .setTitle('❌ Category Not Found')
+        .setDescription('The requested help category was not found.')
         .setTimestamp();
   }
 }
