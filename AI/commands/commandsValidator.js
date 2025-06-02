@@ -10,14 +10,24 @@ function validateCommand(command) {
   if (!command.function) return false;
   
   // Validate command type - UPDATED to include all role functions
-  const validFunctions = ['mute', 'kick', 'ban', 'unmute', 'clear', 'lock', 'unlock', 'add_role', 'remove_role', 'change_nickname', 'create_role', 'delete_role', 'edit_role', 'move_role', 'create_channel', 'delete_channel', 'edit_channel', 'clone_channel'];
+  const validFunctions = ['mute', 'kick', 'ban', 'unmute', 'clear', 'lock', 'unlock', 'add_role', 'remove_role', 'change_nickname', 'create_role', 'delete_role', 'edit_role', 'move_role', 'create_channel', 'delete_channel', 'edit_channel', 'clone_channel', 'send_message', 'pin_message', 'unpin_message', 'react_message'];
   if (!validFunctions.includes(command.function)) return false;
   
   // Role management and nickname commands have different structure
-  if (['add_role', 'remove_role', 'change_nickname', 'create_role', 'delete_role', 'edit_role', 'move_role', 'create_channel', 'delete_channel', 'edit_channel', 'clone_channel'].includes(command.function)) {
+  if (['add_role', 'remove_role', 'change_nickname', 'create_role', 'delete_role', 'edit_role', 'move_role', 'create_channel', 'delete_channel', 'edit_channel', 'clone_channel', 'send_message', 'pin_message', 'unpin_message', 'react_message'].includes(command.function)) {
     // Check for parameters object
     if (!command.parameters || typeof command.parameters !== 'object') {
       return false;
+    }
+    if (['send_message'].includes(command.function)) {
+      if (!command.parameters.content || typeof command.parameters.content !== 'string') {
+        return false;
+      }
+    }
+    if (['pin_message', 'unpin_message', 'react_message'].includes(command.function)) {
+      if (!command.parameters.messageId || typeof command.parameters.messageId !== 'string') {
+        return false;
+      }
     }
     if (command.function === 'create_channel') {
       if (!command.parameters.channelName || typeof command.parameters.channelName !== 'string') {

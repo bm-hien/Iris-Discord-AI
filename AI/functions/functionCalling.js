@@ -1,4 +1,83 @@
 
+const messageManagementFunctions = [
+  {
+    name: "send_message",
+    description: "Send a message to a specific channel. Requires Manage Messages permission.",
+    parameters: {
+      type: "object",
+      properties: {
+        channelId: {
+          type: "string",
+          description: "The Discord channel ID to send message to"
+        },
+        content: {
+          type: "string",
+          description: "The message content to send"
+        }
+      },
+      required: ["channelId", "content"]
+    }
+  },
+  {
+    name: "pin_message",
+    description: "Pin a message in a channel. Requires Manage Messages permission.",
+    parameters: {
+      type: "object",
+      properties: {
+        messageId: {
+          type: "string",
+          description: "The Discord message ID to pin"
+        },
+        channelId: {
+          type: "string",
+          description: "The Discord channel ID (optional, defaults to current channel)"
+        }
+      },
+      required: ["messageId"]
+    }
+  },
+  {
+    name: "unpin_message",
+    description: "Unpin a message in a channel. Requires Manage Messages permission.",
+    parameters: {
+      type: "object",
+      properties: {
+        messageId: {
+          type: "string",
+          description: "The Discord message ID to unpin"
+        },
+        channelId: {
+          type: "string",
+          description: "The Discord channel ID (optional, defaults to current channel)"
+        }
+      },
+      required: ["messageId"]
+    }
+  },
+  {
+    name: "react_message",
+    description: "Add a reaction to a message. Requires Add Reactions permission.",
+    parameters: {
+      type: "object",
+      properties: {
+        messageId: {
+          type: "string",
+          description: "The Discord message ID to react to"
+        },
+        emoji: {
+          type: "string",
+          description: "The emoji to react with (Unicode or custom emoji)"
+        },
+        channelId: {
+          type: "string",
+          description: "The Discord channel ID (optional, defaults to current channel)"
+        }
+      },
+      required: ["messageId", "emoji"]
+    }
+  }
+];
+
 const channelManagementFunctions = [
   {
     name: "create_channel",
@@ -343,7 +422,9 @@ const moderationFunctions = [
     }
   },
   // Add role management functions to moderation functions
-  ...roleManagementFunctions
+  ...roleManagementFunctions,
+  ...messageManagementFunctions,
+  ...channelManagementFunctions
 ];
 
 // Helper function to convert function calls to legacy command format
@@ -479,6 +560,39 @@ function convertFunctionCallToCommand(functionCall) {
         parameters: {
           channelId: args.channelId,
           newName: args.newName
+        }
+      };
+    case 'send_message':
+      return {
+        function: 'send_message',
+        parameters: {
+          channelId: args.channelId,
+          content: args.content
+        }
+      };
+    case 'pin_message':
+      return {
+        function: 'pin_message',
+        parameters: {
+          messageId: args.messageId,
+          channelId: args.channelId
+        }
+      };
+    case 'unpin_message':
+      return {
+        function: 'unpin_message',
+        parameters: {
+          messageId: args.messageId,
+          channelId: args.channelId
+        }
+      };
+    case 'react_message':
+      return {
+        function: 'react_message',
+        parameters: {
+          messageId: args.messageId,
+          emoji: args.emoji,
+          channelId: args.channelId
         }
       };
 
