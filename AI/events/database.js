@@ -31,6 +31,15 @@ function initDatabase() {
       FOREIGN KEY (user_id) REFERENCES users(id)
     )`);
     
+    // Add missing model column to messages table if it doesn't exist
+    db.run(`ALTER TABLE messages ADD COLUMN model TEXT DEFAULT 'unknown'`, (err) => {
+      if (err && !err.message.includes('duplicate column name')) {
+        console.error('Error adding model column to messages table:', err);
+      } else if (!err) {
+        console.log('Added model column to messages table');
+      }
+    });
+    
     // Create api_keys table with all required columns
     db.run(`CREATE TABLE IF NOT EXISTS api_keys (
       user_id TEXT PRIMARY KEY,
@@ -39,19 +48,6 @@ function initDatabase() {
       provider TEXT DEFAULT 'gemini',
       endpoint TEXT DEFAULT 'https://generativelanguage.googleapis.com/v1beta/openai/',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )`);
-
-    // CREATE CUSTOM PROVIDERS TABLE
-    db.run(`CREATE TABLE IF NOT EXISTS custom_providers (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id TEXT NOT NULL,
-      name TEXT NOT NULL,
-      endpoint TEXT NOT NULL,
-      default_model TEXT NOT NULL,
-      description TEXT,
-      auth_header TEXT DEFAULT 'Bearer',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(user_id, name)
     )`);
 
     // Add missing columns to existing api_keys table if they don't exist
@@ -73,6 +69,19 @@ function initDatabase() {
       }
     });
 
+    // CREATE CUSTOM PROVIDERS TABLE
+    db.run(`CREATE TABLE IF NOT EXISTS custom_providers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      endpoint TEXT NOT NULL,
+      default_model TEXT NOT NULL,
+      description TEXT,
+      auth_header TEXT DEFAULT 'Bearer',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, name)
+    )`);
+
     db.run(`CREATE TABLE IF NOT EXISTS custom_system_messages (
       user_id TEXT PRIMARY KEY,
       bot_name TEXT,
@@ -80,7 +89,7 @@ function initDatabase() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
 
-    console.log('Database initialized');
+    console.log('Database initialized successfully');
   });
 }
 
@@ -120,14 +129,14 @@ function ensureUserExists(userId, username = null) {
 }
 
 // Add a message to the user's conversation history
-async function addMessageToHistory(userId, role, content, username = null) {
+async function addMessageToHistory(userId, role, content, username = null, model = 'unknown') {
   try {
     await ensureUserExists(userId, username);
     
     return new Promise((resolve, reject) => {
       db.run(
-        'INSERT INTO messages (user_id, role, content) VALUES (?, ?, ?)',
-        [userId, role, content],
+        'INSERT INTO messages (user_id, role, content, model) VALUES (?, ?, ?, ?)',
+        [userId, role, content, model],
         function(err) {
           if (err) {
             reject(err);
@@ -143,6 +152,118 @@ async function addMessageToHistory(userId, role, content, username = null) {
   }
 }
 
+/**
+ * Import conversation history for a user
+ * @param {string} userId - Discord user ID
+ * @param {Array} conversationData - Array of conversation messages to import
+ * @param {boolean} replaceExisting - Whether to replace existing history
+ * @returns {Promise<Object>} - Result of the import operation
+ */
+async function importConversationHistory(userId, conversationData, replaceExisting = false) {
+  try {
+    // Ensure user exists in database
+    await ensureUserExists(userId);
+    
+    // Start a database transaction
+    return new Promise((resolve, reject) => {
+      db.serialize(() => {
+        db.run('BEGIN TRANSACTION');
+        
+        try {
+          // If replacing existing, delete all current messages
+          if (replaceExisting) {
+            db.run('DELETE FROM messages WHERE user_id = ?', [userId]);
+          }
+          
+          // Prepare the insert statement
+          const insertStmt = db.prepare(
+            'INSERT INTO messages (user_id, role, content, model, timestamp) VALUES (?, ?, ?, ?, ?)'
+          );
+          
+          // Import each message
+          let importedCount = 0;
+          const now = Date.now();
+          
+          conversationData.forEach((msg, index) => {
+            // Use original timestamp if available, or create sequential timestamps
+            const timestamp = msg.timestamp || new Date(now - (conversationData.length - index) * 60000).toISOString();
+            const model = msg.model || 'imported';
+            
+            insertStmt.run(userId, msg.role, msg.content, model, timestamp);
+            importedCount++;
+          });
+          
+          // Finalize and commit
+          insertStmt.finalize();
+          db.run('COMMIT');
+          
+          resolve({
+            success: true,
+            importedCount,
+            mode: replaceExisting ? 'replace' : 'merge'
+          });
+        } catch (err) {
+          // Rollback on error
+          db.run('ROLLBACK');
+          reject(err);
+        }
+      });
+    });
+  } catch (error) {
+    console.error('Error importing conversation history:', error);
+    throw error;
+  }
+}
+
+
+async function updateUserApiKeySettings(userId, settings = {}) {
+  const { provider, model, endpoint } = settings;
+  
+  try {
+    return new Promise((resolve, reject) => {
+      const updateFields = [];
+      const params = [];
+      
+      if (provider) {
+        updateFields.push('provider = ?');
+        params.push(provider);
+      }
+      
+      if (model) {
+        updateFields.push('model = ?');
+        params.push(model); 
+      }
+      
+      if (endpoint) {
+        updateFields.push('endpoint = ?');
+        params.push(endpoint);
+      }
+      
+      if (updateFields.length === 0) {
+        resolve(false);
+        return;
+      }
+      
+      params.push(userId); // Add userId as the last parameter
+      
+      db.run(
+        `UPDATE api_keys SET ${updateFields.join(', ')} WHERE user_id = ?`,
+        params,
+        function(err) {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(this.changes > 0);
+        }
+      );
+    });
+  } catch (error) {
+    console.error('Error updating API key settings:', error);
+    throw error;
+  }
+}
+
 // Get conversation history for a user (limited to most recent messages)
 async function getConversationHistory(userId, limit = 10) {
   try {
@@ -150,7 +271,7 @@ async function getConversationHistory(userId, limit = 10) {
     
     return new Promise((resolve, reject) => {
       const query = `
-        SELECT role, content 
+        SELECT role, content, timestamp 
         FROM messages 
         WHERE user_id = ? 
         ORDER BY timestamp DESC 
@@ -522,5 +643,7 @@ module.exports = {
   getUserEndpoint,
   addCustomProvider,
   getUserCustomProviders,
-  removeCustomProvider
+  removeCustomProvider,
+  importConversationHistory,
+  updateUserApiKeySettings
 };

@@ -1,3 +1,11 @@
+const path = require('path');
+const fs = require('fs');
+
+const tempDir = path.join(__dirname, 'temp');
+if (!fs.existsSync(tempDir)) {
+  fs.mkdirSync(tempDir, { recursive: true });
+}
+
 /**
  * Entry point for Discord AI Bot
  * This file imports and runs the main bot file

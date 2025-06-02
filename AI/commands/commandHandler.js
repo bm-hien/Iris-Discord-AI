@@ -14,6 +14,7 @@ const executeClear = require('./commandExecutors/Utils/clearCommand');
 const { executeAddRole, executeRemoveRole, executeCreateRole, executeDeleteRole, executeEditRole, executeMoveRole } = require('./commandExecutors/Moderation/roleCommand');
 const { executeChangeNickname } = require('./commandExecutors/Moderation/nicknameCommand');
 const { executeCreateChannel, executeDeleteChannel, executeEditChannel, executeCloneChannel, executeLockChannel, executeUnlockChannel } = require('./commandExecutors/Moderation/channelCommand');
+const { executeSendMessage, executePinMessage, executeUnpinMessage, executeReactMessage } = require('./commandExecutors/Moderation/messageCommand');
 
 
 
@@ -57,6 +58,12 @@ function hasPermission(member, command) {
     case 'edit_channel':
     case 'clone_channel':
       return member.permissions.has(PermissionsBitField.Flags.ManageChannels);
+    case 'send_message':
+    case 'pin_message':
+    case 'unpin_message':
+      return member.permissions.has(PermissionsBitField.Flags.ManageMessages);
+    case 'react_message':
+      return member.permissions.has(PermissionsBitField.Flags.AddReactions);
     default:
       return false;
   }
@@ -291,6 +298,26 @@ async function handleCommand(message, command) {
         embedTitle = '📋 Channel Cloned';
         embedColor = 0x9B59B6;
         break;
+      case 'send_message':
+      result = await executeSendMessage(message, command);
+      embedTitle = '📤 Message Sent';
+      embedColor = 0x00FF00;
+      break;
+    case 'pin_message':
+      result = await executePinMessage(message, command);
+      embedTitle = '📌 Message Pinned';
+      embedColor = 0xFFD700;
+      break;
+    case 'unpin_message':
+      result = await executeUnpinMessage(message, command);
+      embedTitle = '📌 Message Unpinned';
+      embedColor = 0x808080;
+      break;
+    case 'react_message':
+      result = await executeReactMessage(message, command);
+      embedTitle = '😊 Reaction Added';
+      embedColor = 0xFFA500;
+      break;
       default:
         result = { success: false, message: `Unknown command: ${command.function}` };
         break;
@@ -426,6 +453,12 @@ function getRequiredPermissionName(commandFunction) {
     case 'edit_channel':
     case 'clone_channel':
       return 'Manage Channels';
+    case 'send_message':
+    case 'pin_message':
+    case 'unpin_message':
+      return 'Manage Messages';
+    case 'react_message':
+      return 'Add Reactions';
     default:
       return 'Undefined';
   }

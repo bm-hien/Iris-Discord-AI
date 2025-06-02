@@ -78,3 +78,6 @@ temp/
 # Configuration backups
 config/*.backup
 *.bak
+
+# Temporary files
+temp/

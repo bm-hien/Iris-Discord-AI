@@ -3,7 +3,7 @@ const { clearConversationHistory } = require('../../AI/events/database');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('reset')
+    .setName('clear')
     .setDescription('Reset your chat history with the AI assistant'),
   
   execute: async (interaction) => {
