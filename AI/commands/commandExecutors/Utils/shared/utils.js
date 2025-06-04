@@ -3,33 +3,55 @@
  */
 
 /**
- * Find a member in a guild by various identifiers
- * @param {Guild} guild - Discord guild object
- * @param {string} identifier - User ID, mention, or username
- * @returns {Promise<GuildMember|null>} - Found member or null
+ * Find a member by ID, username, or display name
+ * @param {Guild} guild - Discord guild
+ * @param {string} target - Target identifier
+ * @returns {GuildMember|null} - Found member or null
  */
-async function findMember(guild, identifier) {
-  if (!guild || !identifier) return null;
-  
+async function findMember(guild, target) {
   try {
-    // Remove mentions and get clean ID
-    const cleanId = identifier.replace(/[<@!&>]/g, '');
+    // Clean the target (remove mentions)
+    const cleanTarget = target.replace(/[<@!&>]/g, '');
     
-    // Try to fetch by ID first
-    if (/^\d+$/.test(cleanId)) {
+    // Try to find by ID first
+    if (/^\d{17,19}$/.test(cleanTarget)) {
       try {
-        return await guild.members.fetch(cleanId);
+        return await guild.members.fetch(cleanTarget);
       } catch (error) {
-        // ID not found, continue to username search
+        // Continue to other methods if ID fetch fails
       }
     }
     
-    // Try to find by username or nickname
+    // If not found by ID, try by username or display name
     const members = await guild.members.fetch();
-    return members.find(member => 
-      member.user.username.toLowerCase() === identifier.toLowerCase() ||
-      (member.nickname && member.nickname.toLowerCase() === identifier.toLowerCase())
-    ) || null;
+    
+    // Try exact username match
+    let found = members.find(member => 
+      member.user.username.toLowerCase() === target.toLowerCase()
+    );
+    
+    if (found) return found;
+    
+    // Try display name match
+    found = members.find(member => 
+      member.displayName.toLowerCase() === target.toLowerCase()
+    );
+    
+    if (found) return found;
+    
+    // Try partial username match
+    found = members.find(member => 
+      member.user.username.toLowerCase().includes(target.toLowerCase())
+    );
+    
+    if (found) return found;
+    
+    // Try partial display name match
+    found = members.find(member => 
+      member.displayName.toLowerCase().includes(target.toLowerCase())
+    );
+    
+    return found || null;
     
   } catch (error) {
     console.error('Error finding member:', error);
@@ -39,71 +61,71 @@ async function findMember(guild, identifier) {
 
 /**
  * Parse duration string to milliseconds
- * @param {string} duration - Duration string like "1h", "30m", "7d"
- * @returns {number} - Duration in milliseconds
+ * @param {string} duration - Duration string (e.g., "10m", "1h", "2d")
+ * @returns {number|null} - Duration in milliseconds or null if invalid
  */
 function parseDuration(duration) {
-  if (!duration || typeof duration !== 'string') return 0;
+  if (!duration) return null;
   
-  const match = duration.match(/^(\d+)([smhd])$/i);
-  if (!match) return 0;
+  const timeRegex = /^(\d+)([smhd])$/i;
+  const match = duration.match(timeRegex);
+  
+  if (!match) return null;
   
   const value = parseInt(match[1]);
   const unit = match[2].toLowerCase();
   
   switch (unit) {
-    case 's': return value * 1000; // seconds
-    case 'm': return value * 60 * 1000; // minutes
-    case 'h': return value * 60 * 60 * 1000; // hours
-    case 'd': return value * 24 * 60 * 60 * 1000; // days
-    default: return 0;
+    case 's': return value * 1000;
+    case 'm': return value * 60 * 1000;
+    case 'h': return value * 60 * 60 * 1000;
+    case 'd': return value * 24 * 60 * 60 * 1000;
+    default: return null;
   }
 }
 
 /**
- * Format duration from milliseconds to human readable string
+ * Format duration from milliseconds to human readable
  * @param {number} ms - Duration in milliseconds
- * @returns {string} - Formatted duration string
+ * @returns {string} - Human readable duration
  */
 function formatDuration(ms) {
-  if (!ms || ms <= 0) return 'No duration';
+  if (!ms) return 'Permanent';
   
   const seconds = Math.floor(ms / 1000);
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
   
-  if (days > 0) return `${days} day${days > 1 ? 's' : ''}`;
-  if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''}`;
-  if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''}`;
-  return `${seconds} second${seconds > 1 ? 's' : ''}`;
+  if (days > 0) return `${days}d ${hours % 24}h`;
+  if (hours > 0) return `${hours}h ${minutes % 60}m`;
+  if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
+  return `${seconds}s`;
 }
 
 /**
- * Validate channel ID format
- * @param {string} channelId - Channel ID to validate
- * @returns {boolean} - Whether the ID is valid
+ * Validate Discord ID format
+ * @param {string} id - Discord ID to validate
+ * @returns {boolean} - True if valid Discord ID
  */
-function isValidChannelId(channelId) {
-  if (!channelId || typeof channelId !== 'string') return false;
-  return /^\d{17,19}$/.test(channelId);
+function isValidDiscordId(id) {
+  return /^\d{17,19}$/.test(id);
 }
 
 /**
- * Validate user ID format
- * @param {string} userId - User ID to validate
- * @returns {boolean} - Whether the ID is valid
+ * Extract user ID from mention
+ * @param {string} mention - User mention string
+ * @returns {string|null} - Extracted user ID or null
  */
-function isValidUserId(userId) {
-  if (!userId || typeof userId !== 'string') return false;
-  const cleanId = userId.replace(/[<@!&>]/g, '');
-  return /^\d{17,19}$/.test(cleanId);
+function extractUserIdFromMention(mention) {
+  const match = mention.match(/^<@!?(\d{17,19})>$/);
+  return match ? match[1] : null;
 }
 
 module.exports = {
   findMember,
   parseDuration,
   formatDuration,
-  isValidChannelId,
-  isValidUserId
+  isValidDiscordId,
+  extractUserIdFromMention
 };

@@ -89,6 +89,30 @@ function initDatabase() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
 
+    db.run(`CREATE TABLE IF NOT EXISTS warnings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      guild_id TEXT NOT NULL,
+      moderator_id TEXT NOT NULL,
+      reason TEXT,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )`);
+
+    db.run(`
+    CREATE TABLE IF NOT EXISTS auto_moderation_rules (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      guild_id TEXT NOT NULL,
+      warning_threshold INTEGER NOT NULL,
+      action TEXT NOT NULL,
+      duration TEXT,
+      reason TEXT,
+      created_by TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(guild_id, warning_threshold)
+    )
+  `);
+
     console.log('Database initialized successfully');
   });
 }
@@ -620,6 +644,247 @@ async function getUserEndpoint(userId) {
   }
 }
 
+// Add a warning to database
+async function addWarning(userId, guildId, moderatorId, reason = null) {
+  try {
+    // Ensure user exists in database
+    await ensureUserExists(userId);
+    
+    return new Promise((resolve, reject) => {
+      db.run(
+        'INSERT INTO warnings (user_id, guild_id, moderator_id, reason) VALUES (?, ?, ?, ?)',
+        [userId, guildId, moderatorId, reason],
+        function(err) {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve({
+            id: this.lastID,
+            userId,
+            guildId,
+            moderatorId,
+            reason,
+            timestamp: new Date().toISOString()
+          });
+        }
+      );
+    });
+  } catch (error) {
+    console.error('Error adding warning:', error);
+    throw error;
+  }
+}
+
+// Get warnings for a user in a specific guild
+async function getUserWarnings(userId, guildId, limit = 10) {
+  try {
+    return new Promise((resolve, reject) => {
+      db.all(
+        'SELECT * FROM warnings WHERE user_id = ? AND guild_id = ? ORDER BY timestamp DESC LIMIT ?',
+        [userId, guildId, limit],
+        (err, rows) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(rows || []);
+        }
+      );
+    });
+  } catch (error) {
+    console.error('Error getting user warnings:', error);
+    throw error;
+  }
+}
+
+// Get total warning count for a user in a guild
+async function getUserWarningCount(userId, guildId) {
+  try {
+    return new Promise((resolve, reject) => {
+      db.get(
+        'SELECT COUNT(*) as count FROM warnings WHERE user_id = ? AND guild_id = ?',
+        [userId, guildId],
+        (err, row) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(row ? row.count : 0);
+        }
+      );
+    });
+  } catch (error) {
+    console.error('Error getting warning count:', error);
+    throw error;
+  }
+}
+
+// Remove a specific warning by ID
+async function removeWarning(warningId, moderatorId) {
+  try {
+    return new Promise((resolve, reject) => {
+      db.run(
+        'DELETE FROM warnings WHERE id = ?',
+        [warningId],
+        function(err) {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(this.changes > 0);
+        }
+      );
+    });
+  } catch (error) {
+    console.error('Error removing warning:', error);
+    throw error;
+  }
+}
+
+// Clear all warnings for a user in a guild
+async function clearUserWarnings(userId, guildId) {
+  try {
+    return new Promise((resolve, reject) => {
+      db.run(
+        'DELETE FROM warnings WHERE user_id = ? AND guild_id = ?',
+        [userId, guildId],
+        function(err) {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(this.changes);
+        }
+      );
+    });
+  } catch (error) {
+    console.error('Error clearing user warnings:', error);
+    throw error;
+  }
+}
+
+// Get warning by ID
+async function getWarningById(warningId) {
+  try {
+    return new Promise((resolve, reject) => {
+      db.get(
+        'SELECT * FROM warnings WHERE id = ?',
+        [warningId],
+        (err, row) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(row || null);
+        }
+      );
+    });
+  } catch (error) {
+    console.error('Error getting warning by ID:', error);
+    throw error;
+  }
+}
+
+// Get auto-moderation rules for a guild
+async function getAutoModerationRules(guildId) {
+  try {
+    return new Promise((resolve, reject) => {
+      db.all(
+        'SELECT * FROM auto_moderation_rules WHERE guild_id = ? ORDER BY warning_threshold ASC',
+        [guildId],
+        (err, rows) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(rows || []);
+        }
+      );
+    });
+  } catch (error) {
+    console.error('Error getting auto-moderation rules:', error);
+    throw error;
+  }
+}
+
+// Set auto-moderation rule
+async function setAutoModerationRule(guildId, threshold, action, duration, reason, createdBy) {
+  try {
+    return new Promise((resolve, reject) => {
+      db.run(
+        `INSERT INTO auto_moderation_rules (guild_id, warning_threshold, action, duration, reason, created_by) 
+         VALUES (?, ?, ?, ?, ?, ?) 
+         ON CONFLICT(guild_id, warning_threshold) 
+         DO UPDATE SET action = ?, duration = ?, reason = ?, created_by = ?`,
+        [guildId, threshold, action, duration, reason, createdBy, action, duration, reason, createdBy],
+        function(err) {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve({
+            id: this.lastID,
+            guildId,
+            threshold,
+            action,
+            duration,
+            reason,
+            createdBy
+          });
+        }
+      );
+    });
+  } catch (error) {
+    console.error('Error setting auto-moderation rule:', error);
+    throw error;
+  }
+}
+
+// Remove auto-moderation rule
+async function removeAutoModerationRule(guildId, threshold) {
+  try {
+    return new Promise((resolve, reject) => {
+      db.run(
+        'DELETE FROM auto_moderation_rules WHERE guild_id = ? AND warning_threshold = ?',
+        [guildId, threshold],
+        function(err) {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(this.changes > 0);
+        }
+      );
+    });
+  } catch (error) {
+    console.error('Error removing auto-moderation rule:', error);
+    throw error;
+  }
+}
+
+// Clear all auto-moderation rules for a guild
+async function clearAutoModerationRules(guildId) {
+  try {
+    return new Promise((resolve, reject) => {
+      db.run(
+        'DELETE FROM auto_moderation_rules WHERE guild_id = ?',
+        [guildId],
+        function(err) {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(this.changes);
+        }
+      );
+    });
+  } catch (error) {
+    console.error('Error clearing auto-moderation rules:', error);
+    throw error;
+  }
+}
+
 // Close database connection when Node.js process exits
 process.on('exit', () => {
   db.close();
@@ -645,5 +910,15 @@ module.exports = {
   getUserCustomProviders,
   removeCustomProvider,
   importConversationHistory,
-  updateUserApiKeySettings
+  updateUserApiKeySettings,
+  addWarning,
+  getUserWarnings,
+  getUserWarningCount,
+  removeWarning,
+  clearUserWarnings,
+  getWarningById,
+  getAutoModerationRules,
+  setAutoModerationRule,
+  removeAutoModerationRule,
+  clearAutoModerationRules
 };

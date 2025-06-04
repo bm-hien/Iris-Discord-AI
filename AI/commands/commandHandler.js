@@ -15,7 +15,8 @@ const { executeAddRole, executeRemoveRole, executeCreateRole, executeDeleteRole,
 const { executeChangeNickname } = require('./commandExecutors/Moderation/nicknameCommand');
 const { executeCreateChannel, executeDeleteChannel, executeEditChannel, executeCloneChannel, executeLockChannel, executeUnlockChannel } = require('./commandExecutors/Moderation/channelCommand');
 const { executeSendMessage, executePinMessage, executeUnpinMessage, executeReactMessage } = require('./commandExecutors/Moderation/messageCommand');
-
+const { executeWarn, executeWarnings, executeDelwarn, executeClearwarns } = require('./commandExecutors/Moderation/warnCommand');
+const { executeSetAutoModRule, executeClearAutoModRules, executeListAutoModRules, executeRemoveAutoModRule } = require('./commandExecutors/Moderation/autoModeration');
 
 
 // Helper function to check if a user has the required permissions for a command
@@ -64,6 +65,17 @@ function hasPermission(member, command) {
       return member.permissions.has(PermissionsBitField.Flags.ManageMessages);
     case 'react_message':
       return member.permissions.has(PermissionsBitField.Flags.AddReactions);
+    case 'warn':
+    case 'warnings':
+    case 'delwarn':
+    case 'clearwarns':
+      return member.permissions.has(PermissionsBitField.Flags.ModerateMembers) ||
+            member.permissions.has(PermissionsBitField.Flags.KickMembers);
+    case 'set_automod_rule':
+    case 'remove_automod_rule':
+    case 'list_automod_rules':
+    case 'clear_automod_rules':
+      return member.permissions.has(PermissionsBitField.Flags.Administrator);
     default:
       return false;
   }
@@ -318,7 +330,49 @@ async function handleCommand(message, command) {
       embedTitle = '😊 Reaction Added';
       embedColor = 0xFFA500;
       break;
+    case 'warn':
+      result = await executeWarn(message, command);
+      embedTitle = '⚠️ Member Warned';
+      embedColor = 0xFFAA00; // Orange
+      break;
+
+    case 'warnings':
+      result = await executeWarnings(message, command);
+      embedTitle = '📋 Warning History';
+      embedColor = 0xFFAA00; // Orange
+      break;
+    case 'delwarn':
+      result = await executeDelwarn(message, command);
+      embedTitle = '🗑️ Warning Deleted';
+      embedColor = 0x00FF00; // Green
+      break;
+
+    case 'clearwarns':
+      result = await executeClearwarns(message, command);
+      embedTitle = '🧹 Warnings Cleared';
+      embedColor = 0x00FF00; // Green
+      break;
       default:
+    case 'set_automod_rule':
+      result = await executeSetAutoModRule(message, command);
+      embedTitle = '⚙️ Auto-Mod Rule Set';
+      embedColor = 0x00AA00; // Green
+      break;
+    case 'list_automod_rules':
+      result = await executeListAutoModRules(message, command);
+      embedTitle = '📋 Auto-Mod Rules';
+      embedColor = 0x0099FF; // Blue
+      break;
+    case 'remove_automod_rule':
+      result = await executeRemoveAutoModRule(message, command);
+      embedTitle = '🗑️ Auto-Mod Rule Removed';
+      embedColor = 0xFF6600; // Orange
+      break;
+    case 'clear_automod_rules':
+      result = await executeClearAutoModRules(message, command);
+      embedTitle = '🧹 Auto-Mod Rules Cleared';
+      embedColor = 0xFF0000; // Red
+      break;
         result = { success: false, message: `Unknown command: ${command.function}` };
         break;
     }
@@ -459,6 +513,11 @@ function getRequiredPermissionName(commandFunction) {
       return 'Manage Messages';
     case 'react_message':
       return 'Add Reactions';
+    case 'warn':
+    case 'warnings':
+    case 'delwarn':
+    case 'clearwarns':
+      return 'Moderate Members';
     default:
       return 'Undefined';
   }

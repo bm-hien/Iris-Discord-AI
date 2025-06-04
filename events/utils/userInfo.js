@@ -3,7 +3,7 @@
  */
 const { PermissionsBitField, ChannelType, ActivityType } = require('discord.js');
 const { checkUserPermissions } = require('./permissions');
-
+const { getUserWarningCount } = require('../../AI/events/database');
 /**
  * Extract detailed server role information for AI understanding
  * @param {Guild} guild - Discord guild
@@ -460,7 +460,7 @@ function extractUserPresence(member) {
  * @param {Message} message - Discord message object
  * @returns {Object} Complete user information
  */
-function getUserInfo(message) {
+async function getUserInfo(message) {
   const user = message.author;
   const userInfo = {
     username: user.username,
@@ -509,6 +509,13 @@ function getUserInfo(message) {
     
     // Get all channels in the server
     userInfo.channels = getServerChannels(message.guild);
+    
+    try {
+    userInfo.warningCount = await getUserWarningCount(user.id, message.guild.id);
+  } catch (error) {
+    console.error('Error getting warning count:', error);
+    userInfo.warningCount = 0;
+  }
     
     // Get user's member object in the guild
     const member = message.guild.members.cache.get(user.id);

@@ -355,6 +355,68 @@ const roleManagementFunctions = [
   }
 ];
 
+const autoModerationFunctions = [
+  {
+    name: "set_automod_rule",
+    description: "Set an auto-moderation rule that triggers when a user reaches a certain number of warnings. Requires administrator permissions.",
+    parameters: {
+      type: "object",
+      properties: {
+        warning_threshold: {
+          type: "integer",
+          description: "Number of warnings that triggers this rule (1-20)"
+        },
+        action: {
+          type: "string",
+          enum: ["mute", "kick", "ban"],
+          description: "Action to take when threshold is reached"
+        },
+        duration: {
+          type: "string",
+          description: "Duration for mute/ban actions (e.g., '1h', '1d', '7d') - optional for kick"
+        },
+        reason: {
+          type: "string",
+          description: "Custom reason for the action (optional)"
+        }
+      },
+      required: ["warning_threshold", "action"]
+    }
+  },
+  {
+    name: "remove_automod_rule",
+    description: "Remove an auto-moderation rule for a specific warning threshold. Requires administrator permissions.",
+    parameters: {
+      type: "object",
+      properties: {
+        warning_threshold: {
+          type: "integer",
+          description: "Warning threshold to remove rule for"
+        }
+      },
+      required: ["warning_threshold"]
+    }
+  },
+  {
+    name: "list_automod_rules",
+    description: "List all current auto-moderation rules for this server. Requires administrator permissions.",
+    parameters: {
+      type: "object",
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: "clear_automod_rules",
+    description: "Clear all auto-moderation rules for this server. Requires administrator permissions.",
+    parameters: {
+      type: "object", 
+      properties: {},
+      required: []
+    }
+  }
+];
+
 const moderationFunctions = [
   {
     name: "moderate_member",
@@ -364,7 +426,7 @@ const moderationFunctions = [
       properties: {
         action: {
           type: "string",
-          enum: ["mute", "unmute", "kick", "ban"],
+          enum: ["mute", "unmute", "kick", "ban", "warn"],
           description: "The moderation action to perform on the member"
         },
         user_id: {
@@ -381,6 +443,60 @@ const moderationFunctions = [
         }
       },
       required: ["action", "user_id"]
+    }
+  },
+  {
+    name: "get_user_warnings",
+    description: "Get warning history for a specific user in the current server. Requires moderation permissions.",
+    parameters: {
+      type: "object",
+      properties: {
+        user_id: {
+          type: "string",
+          description: "ID of the user to check warnings for"
+        },
+        limit: {
+          type: "number",
+          description: "Maximum number of warnings to retrieve (default: 10)"
+        }
+      },
+      required: ["user_id"]
+    }
+  },
+  {
+    name: "delete_warning",
+    description: "Delete a specific warning by ID. Requires moderation permissions.",
+    parameters: {
+      type: "object",
+      properties: {
+        warning_id: {
+          type: "string",
+          description: "ID of the warning to delete"
+        },
+        reason: {
+          type: "string",
+          description: "Reason for deleting the warning"
+        }
+      },
+      required: ["warning_id"]
+    }
+  },
+  {
+    name: "clear_user_warnings",
+    description: "Clear all warnings for a specific user. Requires moderation permissions.",
+    parameters: {
+      type: "object",
+      properties: {
+        user_id: {
+          type: "string",
+          description: "ID of the user to clear warnings for"
+        },
+        reason: {
+          type: "string",
+          description: "Reason for clearing warnings"
+        }
+      },
+      required: ["user_id"]
     }
   },
   {
@@ -424,7 +540,8 @@ const moderationFunctions = [
   // Add role management functions to moderation functions
   ...roleManagementFunctions,
   ...messageManagementFunctions,
-  ...channelManagementFunctions
+  ...channelManagementFunctions,
+  ...autoModerationFunctions
 ];
 
 // Helper function to convert function calls to legacy command format
@@ -438,6 +555,27 @@ function convertFunctionCallToCommand(functionCall) {
         target: args.user_id,
         reason: args.reason,
         duration: args.duration
+      };
+
+    case "get_user_warnings":
+      return {
+        function: "warnings",
+        target: args.user_id,
+        limit: args.limit
+      };
+
+    case "delete_warning":
+      return {
+        function: "delwarn",
+        warningId: args.warning_id,
+        reason: args.reason
+      };
+
+    case "clear_user_warnings":
+      return {
+        function: "clearwarns",
+        target: args.user_id,
+        reason: args.reason
       };
     
     case "clear_messages":
@@ -594,6 +732,43 @@ function convertFunctionCallToCommand(functionCall) {
           emoji: args.emoji,
           channelId: args.channelId
         }
+      };
+    case 'set_automod_rule':
+      const setAutoModParams = {
+        warning_threshold: args.warning_threshold,
+        action: args.action
+      };
+      
+      if (args.duration !== undefined) {
+        setAutoModParams.duration = args.duration;
+      }
+      if (args.reason !== undefined) {
+        setAutoModParams.reason = args.reason;
+      }
+      
+      return {
+        function: 'set_automod_rule',
+        parameters: setAutoModParams
+      };
+      
+    case 'list_automod_rules':
+      return {
+        function: 'list_automod_rules',
+        parameters: {}
+      };
+      
+    case 'remove_automod_rule':
+      return {
+        function: 'remove_automod_rule',
+        parameters: {
+          warning_threshold: args.warning_threshold
+        }
+      };
+      
+    case 'clear_automod_rules':
+      return {
+        function: 'clear_automod_rules',
+        parameters: {}
       };
 
     // Removed list_roles case

@@ -150,7 +150,7 @@ module.exports = {
         }
 
         // Get user information for context
-        const userInfo = getUserInfo(message);
+        const userInfo = await getUserInfo(message);
         // Add avatar URL for embed
         userInfo.avatarUrl = message.author.displayAvatarURL({ format: 'png', dynamic: true });
         

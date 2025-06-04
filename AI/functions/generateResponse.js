@@ -219,6 +219,9 @@ async function generateResponse(userMessage, userId, userInfo = {}, imageAttachm
       presenceText += '\n';
     }
 
+    const warningInfoText = userInfo.warningCount !== undefined ? 
+      `- Current warnings: ${userInfo.warningCount}` : '';
+
     // Add URL context information to system message
     let urlContextText = '';
     if (hasUrls && currentModelSupportsUrlContext) {
@@ -253,6 +256,7 @@ ${apiKeyStatusText}
 ${presenceText}
 ${urlContextText}
 ${roleContextText}
+${warningInfoText}
 
 IMPORTANT about URL CONTEXT:
 - When users send URLs, you ${currentModelSupportsUrlContext ? 'CAN' : 'CANNOT'} access and analyze website content
