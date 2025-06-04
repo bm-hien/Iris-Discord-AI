@@ -5,6 +5,7 @@ const { Events, EmbedBuilder } = require('discord.js');
 const { generateResponse } = require('../AI/ai.js');
 const { handleCommand } = require('../AI/commands/commandHandler.js');
 const { getUserInfo } = require('./utils/userInfo');
+const { imageToBase64, videoToBase64, isVideoFile, isPdfFile, isSupportedDocumentFile, pdfToBase64 } = require('../AI/functions/mediaProcessor');
 
 // Map để track active requests per user (chỉ khi AI đang xử lý)
 const activeRequests = new Set();
@@ -26,18 +27,41 @@ module.exports = {
       try {
         // Fetch the replied message
         const repliedMessage = await message.channel.messages.fetch(message.reference.messageId);
-        originalMessage = repliedMessage;
         
-        // Check if the replied message is from our bot
         if (repliedMessage.author.id === client.user.id) {
           isReplyToBot = true;
-          
-          // Find the original user that the bot message replied to
-          if (repliedMessage.reference && repliedMessage.reference.messageId) {
-            const originalMessageRef = await message.channel.messages.fetch(repliedMessage.reference.messageId);
-            originalUserId = originalMessageRef.author.id;
+          originalUserId = repliedMessage.author.id;
+          originalMessage = repliedMessage;
+        }
+        
+        // Extract attachments from replied message for processing
+        if (repliedMessage.attachments && repliedMessage.attachments.size > 0) {
+          for (const attachment of repliedMessage.attachments.values()) {
+            if (attachment.contentType) {
+              // Check if it's an image
+              if (attachment.contentType.startsWith('image/')) {
+                // Add image attachment to current message processing
+                message.imageAttachments = message.imageAttachments || [];
+                message.imageAttachments.push({
+                  url: attachment.url,
+                  contentType: attachment.contentType,
+                  type: 'image'
+                });
+              }
+              // Check if it's a video
+              else if (isVideoFile(attachment.contentType)) {
+                // Add video attachment to current message processing
+                message.videoAttachments = message.videoAttachments || [];
+                message.videoAttachments.push({
+                  url: attachment.url,
+                  contentType: attachment.contentType,
+                  type: 'video'
+                });
+              }
+            }
           }
         }
+        
       } catch (error) {
         console.error('Error fetching replied message:', error);
       }
@@ -140,6 +164,10 @@ module.exports = {
           type: 'image'
         }));
 
+        if (message.imageAttachments) {
+          imageAttachments.push(...message.imageAttachments);
+        }
+
         const videoAttachments = message.attachments.filter(attachment => {
           const contentType = attachment.contentType?.toLowerCase() || '';
           return contentType.startsWith('video/');
@@ -148,6 +176,10 @@ module.exports = {
           contentType: attachment.contentType || 'video/mp4',
           type: 'video'
         }));
+
+        if (message.videoAttachments) {
+          videoAttachments.push(...message.videoAttachments);
+        }
 
         const documentAttachments = message.attachments.filter(attachment => {
           const contentType = attachment.contentType?.toLowerCase() || '';
