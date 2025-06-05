@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iris AI Bot - Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-robot"></i>
+                <span>Iris AI Bot</span>
+            </div>
+            <div class="nav-menu">
+                <a href="#overview" class="nav-link">Overview</a>
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#commands" class="nav-link">Commands</a>
+                <a href="#setup" class="nav-link">Setup</a>
+                <a href="#api" class="nav-link">API</a>
+            </div>
+            <div class="nav-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>🤖 Iris Discord AI Bot</h1>
+                <p class="hero-subtitle">Intelligent Discord assistant with advanced AI capabilities</p>
+                <div class="hero-badges">
+                    <span class="badge">Discord.js v14</span>
+                    <span class="badge">Node.js</span>
+                    <span class="badge">Multi-Provider AI</span>
+                    <span class="badge">Smart Moderation</span>
+                </div>
+                <div class="hero-buttons">
+                    <a href="#setup" class="btn btn-primary">
+                        <i class="fas fa-rocket"></i>
+                        Get Started
+                    </a>
+                    <a href="https://github.com/bm-hien/Iris-Discord-AI" class="btn btn-secondary">
+                        <i class="fab fa-github"></i>
+                        View on GitHub
+                    </a>
+                </div>
+            </div>
+            <div class="hero-image">
+                <div class="floating-card">
+                    <div class="card-header">
+                        <div class="card-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <div class="code-line">
+                            <span class="keyword">const</span> 
+                            <span class="variable">iris</span> 
+                            <span class="operator">=</span> 
+                            <span class="string">'AI Bot'</span>
+                        </div>
+                        <div class="code-line">
+                            <span class="variable">iris</span><span class="dot">.</span><span class="method">chat</span><span class="bracket">(</span><span class="string">'Hello!'</span><span class="bracket">)</span>
+                        </div>
+                        <div class="code-line comment">
+                            <span>// Intelligent responses</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Overview Section -->
+    <section id="overview" class="section">
+        <div class="container">
+            <h2 class="section-title">📖 Overview</h2>
+            <div class="overview-grid">
+                <div class="overview-card">
+                    <div class="card-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h3>AI-Powered</h3>
+                    <p>Advanced AI with support for multiple providers including Gemini, GPT, Claude, and Groq for intelligent conversations.</p>
+                </div>
+                <div class="overview-card">
+                    <div class="card-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>Smart Moderation</h3>
+                    <p>Intelligent server management with role assignment, nickname management, and automated moderation features.</p>
+                </div>
+                <div class="overview-card">
+                    <div class="card-icon">
+                        <i class="fas fa-images"></i>
+                    </div>
+                    <h3>Media Processing</h3>
+                    <p>Process images, videos, PDFs, and documents with AI analysis and context understanding.</p>
+                </div>
+                <div class="overview-card">
+                    <div class="card-icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <h3>Customizable</h3>
+                    <p>Personalize AI behavior with custom system messages, response formatting, and language preferences.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="section bg-darker">
+        <div class="container">
+            <h2 class="section-title">✨ Key Features</h2>
+            <div class="features-container">
+                <div class="feature-item">
+                    <div class="feature-content">
+                        <div class="feature-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>AI Chat & Conversation</h3>
+                            <p>Natural conversations with context memory, supporting multiple AI models and providers.</p>
+                            <ul class="feature-list">
+                                <li>Context-aware responses</li>
+                                <li>Multi-model support</li>
+                                <li>Conversation history</li>
+                                <li>Custom personalities</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="feature-code">
+                        <pre><code>@Iris What's the weather like today?
+@Iris Explain this code file
+@Iris Help me moderate this server</code></pre>
+                    </div>
+                </div>
+
+                <div class="feature-item reverse">
+                    <div class="feature-content">
+                        <div class="feature-icon">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Role & Nickname Management</h3>
+                            <p>Intelligent role assignment and nickname management with security features.</p>
+                            <ul class="feature-list">
+                                <li>Hierarchy protection</li>
+                                <li>Permission validation</li>
+                                <li>Audit logging</li>
+                                <li>Anti-abuse protection</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="feature-code">
+                        <pre><code>"Add the Helper role to me"
+"Give @user the Moderator role"
+"Change my nickname to Developer"</code></pre>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-content">
+                        <div class="feature-icon">
+                            <i class="fas fa-file-image"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Media Processing</h3>
+                            <p>Advanced media analysis supporting images, videos, PDFs, and documents.</p>
+                            <ul class="feature-list">
+                                <li>Image analysis</li>
+                                <li>Video processing</li>
+                                <li>PDF extraction</li>
+                                <li>Document analysis</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="feature-code">
+                        <pre><code>// Supported formats
+- Images: JPG, PNG, GIF, WebP
+- Videos: MP4, WebM, AVI, MOV
+- Documents: PDF, TXT, HTML, CSS
+- Code: JS, PY, Java, C++</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Commands Section -->
+    <section id="commands" class="section">
+        <div class="container">
+            <h2 class="section-title">📖 Commands</h2>
+            <div class="commands-container">
+                <div class="command-category">
+                    <h3><i class="fas fa-key"></i> API Keys & Configuration</h3>
+                    <div class="command-grid">
+                        <div class="command-item">
+                            <code>/apikey set</code>
+                            <p>Set your personal API key</p>
+                        </div>
+                        <div class="command-item">
+                            <code>/apikey check</code>
+                            <p>View current API key status</p>
+                        </div>
+                        <div class="command-item">
+                            <code>/apikey remove</code>
+                            <p>Remove your API key</p>
+                        </div>
+                        <div class="command-item">
+                            <code>/apikey info</code>
+                            <p>Get API key setup guide</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="command-category">
+                    <h3><i class="fas fa-robot"></i> AI Model Selection</h3>
+                    <div class="command-grid">
+                        <div class="command-item">
+                            <code>/model set</code>
+                            <p>Choose AI model</p>
+                        </div>
+                        <div class="command-item">
+                            <code>/model list</code>
+                            <p>View available models</p>
+                        </div>
+                        <div class="command-item">
+                            <code>/model info</code>
+                            <p>Get model information</p>
+                        </div>
+                        <div class="command-item">
+                            <code>/provider set</code>
+                            <p>Switch AI provider</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="command-category">
+                    <h3><i class="fas fa-database"></i> Data Management</h3>
+                    <div class="command-grid">
+                        <div class="command-item">
+                            <code>/clear</code>
+                            <p>Clear conversation history</p>
+                        </div>
+                        <div class="command-item">
+                            <code>/history</code>
+                            <p>View conversation stats</p>
+                        </div>
+                        <div class="command-item">
+                            <code>/export</code>
+                            <p>Export your data</p>
+                        </div>
+                        <div class="command-item">
+                            <code>/settings</code>
+                            <p>Bot preferences</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="command-category">
+                    <h3><i class="fas fa-palette"></i> Customization</h3>
+                    <div class="command-grid">
+                        <div class="command-item">
+                            <code>/customize set</code>
+                            <p>Custom system messages</p>
+                        </div>
+                        <div class="command-item">
+                            <code>/customize view</code>
+                            <p>View current settings</p>
+                        </div>
+                        <div class="command-item">
+                            <code>/customize reset</code>
+                            <p>Reset to defaults</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Setup Section -->
+    <section id="setup" class="section bg-darker">
+        <div class="container">
+            <h2 class="section-title">🚀 Quick Start</h2>
+            <div class="setup-container">
+                <div class="setup-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Clone Repository</h3>
+                        <div class="code-block">
+                            <pre><code>git clone https://github.com/bm-hien/Iris-Discord-AI.git
+cd Iris-Discord-AI</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setup-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Install Dependencies</h3>
+                        <div class="code-block">
+                            <pre><code>npm install</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setup-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Configure Environment</h3>
+                        <div class="code-block">
+                            <pre><code>cp .env.example .env
+# Edit .env with your Discord bot token</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setup-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>Start the Bot</h3>
+                        <div class="code-block">
+                            <pre><code>npm start</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="setup-info">
+                <div class="info-card">
+                    <h4><i class="fas fa-info-circle"></i> Requirements</h4>
+                    <ul>
+                        <li>Node.js 16+ required</li>
+                        <li>Discord Bot Token</li>
+                        <li>AI Provider API Keys (optional)</li>
+                    </ul>
+                </div>
+                <div class="info-card">
+                    <h4><i class="fas fa-key"></i> Free API Keys</h4>
+                    <ul>
+                        <li><a href="https://aistudio.google.com/app/apikey">Gemini API</a> - 15 req/min</li>
+                        <li><a href="https://console.groq.com/keys">Groq API</a> - Fast responses</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- API Section -->
+    <section id="api" class="section">
+        <div class="container">
+            <h2 class="section-title">🔗 API Reference</h2>
+            <div class="api-container">
+                <div class="api-section">
+                    <h3>Core Functions</h3>
+                    <div class="api-item">
+                        <div class="api-method">generateResponse()</div>
+                        <p>Main AI response generation function</p>
+                        <div class="api-params">
+                            <strong>Parameters:</strong>
+                            <ul>
+                                <li><code>message</code> - Discord message object</li>
+                                <li><code>context</code> - Conversation context</li>
+                                <li><code>options</code> - Additional options</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="api-item">
+                        <div class="api-method">imageToBase64()</div>
+                        <p>Convert image URL to base64 for AI processing</p>
+                        <div class="api-params">
+                            <strong>Parameters:</strong>
+                            <ul>
+                                <li><code>imageUrl</code> - URL of the image</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="api-item">
+                        <div class="api-method">extractUrls()</div>
+                        <p>Extract URLs from text messages</p>
+                        <div class="api-params">
+                            <strong>Parameters:</strong>
+                            <ul>
+                                <li><code>text</code> - Text to extract URLs from</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="api-section">
+                    <h3>Database Functions</h3>
+                    <div class="api-item">
+                        <div class="api-method">setUserApiKey()</div>
+                        <p>Store user's personal API key</p>
+                    </div>
+
+                    <div class="api-item">
+                        <div class="api-method">clearConversationHistory()</div>
+                        <p>Clear user's conversation history</p>
+                    </div>
+
+                    <div class="api-item">
+                        <div class="api-method">getCustomSystemMessage()</div>
+                        <p>Get user's custom AI settings</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4><i class="fas fa-robot"></i> Iris AI Bot</h4>
+                    <p>Bringing AI-powered intelligence to Discord communities worldwide</p>
+                    <div class="social-links">
+                        <a href="https://github.com/bm-hien/Iris-Discord-AI"><i class="fab fa-github"></i></a>
+                        <a href="https://discord.gg/pevruS26Au"><i class="fab fa-discord"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Links</h4>
+                    <ul>
+                        <li><a href="https://github.com/bm-hien/Iris-Discord-AI">GitHub Repository</a></li>
+                        <li><a href="https://discord.gg/pevruS26Au">Discord Support</a></li>
+                        <li><a href="https://buymeacoffee.com/bmhien">Support Development</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul>
+                        <li><a href="#setup">Quick Start</a></li>
+                        <li><a href="#commands">Commands</a></li>
+                        <li><a href="#api">API Reference</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Made with ❤️ by <a href="https://github.com/bm-hien">bm-hien</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
