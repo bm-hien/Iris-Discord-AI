@@ -37,3 +37,17 @@ We actively maintain and provide security updates for the following versions:
 - **Authentication**: 128-bit Poly1305 authentication tag
 - **Key Storage**: Encryption keys stored in `.env` file (auto-generated if missing)
 - **Format**: `nonce:ciphertext:auth_tag` (all base64 encoded)
+
+## 📞 Contact Information
+
+### 🚨 Reporting Security Vulnerabilities
+
+If you discover a security vulnerability, please report it responsibly:
+
+**Preferred Method:**
+- **Discord**: Join our [Discord Server](https://discord.gg/pevruS26Au) and DM `bmhien`
+- **GitHub**: Create a private vulnerability report in our [GitHub Repository](https://github.com/bm-hien/Iris-Discord-AI)
+
+**Alternative Contact:**
+- **Developer**: Contact `bmhien` directly through Discord
+- **Email**: buiminhhien001@gmail.com
