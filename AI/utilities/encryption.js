@@ -128,7 +128,6 @@ class APIKeyEncryption {
       // Combine nonce, encrypted data, and tag
       const result = `${nonce.toString('base64')}:${encrypted.toString('base64')}:${tag.toString('base64')}`;
       
-      console.log('🔒 API key encrypted successfully');
       return result;
       
     } catch (error) {

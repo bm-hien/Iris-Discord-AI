@@ -352,7 +352,6 @@ async function setUserApiKey(userId, apiKey) {
             reject(err);
             return;
           }
-          console.log(`🔒 Encrypted API key saved for user ${userId}`);
           resolve(true);
         }
       );
@@ -384,7 +383,6 @@ async function getUserApiKey(userId) {
             try {
               // Decrypt the API key
               const decryptedApiKey = decrypt(row.api_key);
-              console.log(`🔓 Decrypted API key for user ${userId}`);
               resolve(decryptedApiKey);
             } catch (decryptError) {
               console.error('❌ Decryption failed for user', userId, ':', decryptError.message);
