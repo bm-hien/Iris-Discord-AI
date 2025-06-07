@@ -26,8 +26,36 @@ const {
  */
 async function generateResponse(userMessage, userId, userInfo = {}, imageAttachments = []) {
   try {
+    // Get user's personal API key with corruption detection
+    const userApiKeyResult = await getUserApiKey(userId);
+
+    // Check if API key corruption was detected
+    if (userApiKeyResult && typeof userApiKeyResult === 'object' && userApiKeyResult.__corruption_detected) {
+      console.log(`⚠️ API key corruption detected for user ${userId}`);
+      
+      // Return special message about corruption
+      return {
+        text: "🔑 **API Key Issue Detected**\n\nYour personal API key was corrupted and has been automatically removed. This usually happens when the bot's encryption system is updated.\n\n**To fix this:**\n• Use `/apikey set` to add your API key again\n• Your previous API key is safe - just re-enter it\n\n*I'll use the default bot API key for now.*",
+        embeds: [
+          new EmbedBuilder()
+            .setColor(0xFFAA00)
+            .setTitle('🔑 API Key Corruption Detected')
+            .setDescription('Your personal API key was corrupted and automatically removed.')
+            .addFields(
+              { name: '🔍 What happened?', value: 'The bot\'s encryption key changed, making your stored API key unreadable.', inline: false },
+              { name: '🔧 How to fix:', value: '• Use `/apikey set` to re-enter your API key\n• Your original API key is still valid\n• This is a one-time issue after bot updates', inline: false },
+              { name: '⚡ Current status:', value: 'Using default bot API key (may have rate limits)', inline: false }
+            )
+            .setFooter({ text: 'This is a security feature to protect your data' })
+            .setTimestamp()
+        ],
+        command: null
+      };
+    }
+
+    
     // Get user's API key if available
-    const userApiKey = await getUserApiKey(userId);
+    const userApiKey = userApiKeyResult && typeof userApiKeyResult === 'string' ? userApiKeyResult : null;
     
     // Default API key from your configuration
     const defaultApiKey = "AIzaSyBNEL1IUR6q48crlfaVglQr9QavqRi-mcQ";
@@ -73,6 +101,7 @@ async function generateResponse(userMessage, userId, userInfo = {}, imageAttachm
       return isSupportedDocumentFile(contentType);
     });
 
+    // Filter real image/video attachments (not documents)
     const actualImageAttachments = imageAttachments.filter(attachment => {
       const contentType = attachment.contentType?.toLowerCase() || '';
       return contentType.startsWith('image/') || contentType.startsWith('video/');
@@ -258,21 +287,10 @@ ${urlContextText}
 ${roleContextText}
 ${warningInfoText}
 
-IMPORTANT about URL CONTEXT:
-- When users send URLs, you ${currentModelSupportsUrlContext ? 'CAN' : 'CANNOT'} access and analyze website content
-${currentModelSupportsUrlContext ? 
-  '- Summarize, analyze, and answer questions based on URL content\n- Always cite sources when using information from URLs' :
-  '- Inform that current model doesn\'t support URL context\n- Suggest user switch to supported model using /model set'
-}
-- If cannot access URL, clearly inform the user
-
-ROLE MANAGEMENT INSTRUCTIONS:
-- You can see ALL server roles and their details above
-- Use add_role function to assign roles (requires proper permissions and hierarchy)
-- Use remove_role function to remove roles (requires proper permissions and hierarchy)
-- Always check role hierarchy and permissions before suggesting role actions
-- Provide detailed explanations about roles when users ask
-- Show which roles they can manage and which they cannot
+Current AI Provider and Model Information:
+- Provider: ${userProvider}
+- Model: ${modelToUse}
+- Endpoint: ${userEndpoint || 'Default'}
 
 SUPPORTED URL CONTEXT MODELS:
 - gemini-2.5-flash-preview-05-20 (recommended)
@@ -537,7 +555,7 @@ If someone sends images, describe the image content in detail in English.
             });
           } else {
             finalUserMessage.content.push({
-              type: "text", 
+              type: "text",
               text: `[Document attached (${attachment.contentType}): ${attachment.url}]`
             });
           }
@@ -725,11 +743,17 @@ If someone sends images, describe the image content in detail in English.
                       (error.message && error.message.includes('rate limit')) ||
                       (error.message && error.message.includes('quota exceeded'));
     
+    // Enhanced error handling for API key issues
     let errorMessage = "Sorry, I cannot process your request at this time.";
     let errorTitle = '❌ Error';
     let errorColor = 0xFF0000;
     
-    if (isRateLimit && !await getUserApiKey(userId)) {
+    // Check if error is related to API key corruption
+    if (error.message && error.message.includes('decrypt')) {
+      errorTitle = '🔑 API Key Issue';
+      errorMessage = "There's an issue with your personal API key. Please use `/apikey set` to configure it again, or `/apikey remove` to use the default bot key.";
+      errorColor = 0xFFAA00;
+    } else if (isRateLimit && !userApiKey) {
       errorTitle = '⚠️ API Rate Limit';
       errorMessage = "Bot is rate limited. Please try again later or use your personal API key with `/apikey set` command.";
       errorColor = 0xFFAA00;

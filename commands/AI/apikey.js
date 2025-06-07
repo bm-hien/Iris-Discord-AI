@@ -89,12 +89,13 @@ module.exports = {
         const embed = new EmbedBuilder()
           .setColor(0x00FF00)
           .setTitle('✅ API Key & Provider Set Successfully')
-          .setDescription(`Your personal ${keyType} API key has been set and your provider has been automatically updated.`)
+          .setDescription(`Your personal ${keyType} API key has been encrypted and stored securely.`)
           .addFields(
             { name: 'Provider Auto-Set', value: `🔧 ${keyType}`, inline: true },
             { name: 'Endpoint', value: endpoint, inline: true },
+            { name: 'Security', value: '🔒 ChaCha20-Poly1305 Encrypted', inline: true },
             { name: 'Key Preview', value: `${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)}`, inline: false },
-            { name: 'What happened?', value: `• Your API key was saved securely\n• Provider was automatically set to **${keyType}**\n• Endpoint was configured for optimal performance`, inline: false },
+            { name: 'What happened?', value: `• Your API key was encrypted and saved securely\n• Provider was automatically set to **${keyType}**\n• Endpoint was configured for optimal performance\n• All data is protected with military-grade encryption`, inline: false },
             { name: 'Next Steps', value: '• Use `/apikey check` to verify your API key is working\n• Use `/model set` to choose your preferred model\n• Use `/provider check` to view your current provider settings' }
           )
           .setTimestamp();
@@ -265,9 +266,10 @@ module.exports = {
             .setDescription(`Your ${keyType} API key is valid and working correctly!`)
             .addFields(
               { name: 'Provider', value: keyType, inline: true },
-              { name: 'API Key', value: `${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)}`, inline: true },
-              { name: 'Test Response', value: responseText || 'No response received' },
-              { name: 'Provider Status', value: `Your provider should be automatically set to **${keyType}**. Use \`/provider check\` to verify.` }
+              { name: 'Security', value: '🔒 Encrypted Storage', inline: true },
+              { name: 'API Key', value: `${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)}`, inline: false },
+              { name: 'Test Response', value: responseText.substring(0, 100) + (responseText.length > 100 ? '...' : '') },
+              { name: 'Status', value: '✅ All systems operational' }
             )
             .setTimestamp();
           

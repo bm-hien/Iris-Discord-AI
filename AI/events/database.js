@@ -1,6 +1,8 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
+const { encrypt, decrypt, isEncrypted } = require('../utilities/encryption');
+
 
 // Database setup
 const dbFolder = path.join(__dirname, '..', 'database');
@@ -338,21 +340,25 @@ async function clearConversationHistory(userId) {
 
 async function setUserApiKey(userId, apiKey) {
   try {
+    // Encrypt the API key before storing
+    const encryptedApiKey = encrypt(apiKey);
+    
     return new Promise((resolve, reject) => {
       db.run(
         'INSERT INTO api_keys (user_id, api_key) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET api_key = ?',
-        [userId, apiKey, apiKey],
+        [userId, encryptedApiKey, encryptedApiKey],
         function(err) {
           if (err) {
             reject(err);
             return;
           }
+          console.log(`🔒 Encrypted API key saved for user ${userId}`);
           resolve(true);
         }
       );
     });
   } catch (error) {
-    console.error('Error setting API key:', error);
+    console.error('Error setting encrypted API key:', error);
     throw error;
   }
 }
@@ -366,7 +372,83 @@ async function getUserApiKey(userId) {
           reject(err);
           return;
         }
-        resolve(row ? row.api_key : null);
+        
+        if (!row || !row.api_key) {
+          resolve(null);
+          return;
+        }
+        
+        try {
+          // Check if the API key is encrypted
+          if (isEncrypted(row.api_key)) {
+            try {
+              // Decrypt the API key
+              const decryptedApiKey = decrypt(row.api_key);
+              console.log(`🔓 Decrypted API key for user ${userId}`);
+              resolve(decryptedApiKey);
+            } catch (decryptError) {
+              console.error('❌ Decryption failed for user', userId, ':', decryptError.message);
+              
+              // Check if this is an authentication/corruption error
+              if (decryptError.message.includes('authenticate data') || 
+                  decryptError.message.includes('corrupted') ||
+                  decryptError.message.includes('Unsupported state')) {
+                
+                console.log(`🗑️ Clearing corrupted API key for user ${userId}`);
+                
+                // Clear the corrupted/undecryptable API key
+                db.run('DELETE FROM api_keys WHERE user_id = ?', [userId], (deleteErr) => {
+                  if (deleteErr) {
+                    console.error('Error clearing corrupted API key:', deleteErr);
+                  } else {
+                    console.log(`✅ Cleared corrupted API key for user ${userId}`);
+                  }
+                });
+                
+                // Return special error object to indicate corruption
+                resolve({ 
+                  __corruption_detected: true, 
+                  userId: userId,
+                  error: 'API key corrupted due to encryption key change'
+                });
+              } else {
+                // Other decryption errors
+                console.error('Unknown decryption error:', decryptError);
+                resolve(null);
+              }
+            }
+          } else {
+            // Handle legacy unencrypted keys by encrypting them
+            console.log(`🔄 Migrating unencrypted API key for user ${userId}`);
+            
+            try {
+              const encryptedApiKey = encrypt(row.api_key);
+              
+              // Update the database with encrypted version
+              db.run(
+                'UPDATE api_keys SET api_key = ? WHERE user_id = ?',
+                [encryptedApiKey, userId],
+                (updateErr) => {
+                  if (updateErr) {
+                    console.error('Error migrating API key to encrypted format:', updateErr);
+                  } else {
+                    console.log(`✅ Successfully migrated API key for user ${userId}`);
+                  }
+                }
+              );
+              
+              resolve(row.api_key); // Return the original key for this request
+            } catch (encryptError) {
+              // If encryption fails, still return the original key but log the error
+              console.error('Failed to encrypt legacy API key:', encryptError);
+              console.warn(`⚠️ Using unencrypted API key for user ${userId} (encryption failed)`);
+              resolve(row.api_key);
+            }
+          }
+        } catch (error) {
+          console.error('Error processing API key:', error);
+          resolve(null);
+        }
       });
     });
   } catch (error) {
