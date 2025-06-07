@@ -1,6 +1,7 @@
 /**
  * Module for processing AI responses with Function Calling support and URL Context
  */
+const config = require('../../config/config');
 const { OpenAI } = require("openai");
 const { GoogleGenAI, Type } = require("@google/genai");
 const { EmbedBuilder } = require('discord.js');
@@ -58,7 +59,7 @@ async function generateResponse(userMessage, userId, userInfo = {}, imageAttachm
     const userApiKey = userApiKeyResult && typeof userApiKeyResult === 'string' ? userApiKeyResult : null;
     
     // Default API key from your configuration
-    const defaultApiKey = "AIzaSyBNEL1IUR6q48crlfaVglQr9QavqRi-mcQ";
+    const defaultApiKey = config.DEFAULT_GEMINI_API_KEY;
     
     // Use the appropriate API key
     const apiKey = userApiKey || defaultApiKey;

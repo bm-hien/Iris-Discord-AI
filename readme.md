@@ -8,8 +8,9 @@
 
 **Intelligent Discord AI Bot with Multi-Provider Support & Advanced Moderation**
 
-[🚀 Quick Start](#-quick-start) • [⚙️ Configuration](#️-configuration) • [📖 Commands](#-commands) • [🤝 Contributing](#-contributing)
+[🚀 Add to Server](https://discord.com/oauth2/authorize?client_id=1329852158241411072&permissions=1409222306998&integration_type=0&scope=bot) • [📖 Self-Host Guide](#-quick-start) • [⚙️ Configuration](#️-configuration) • [🤝 Contributing](#-contributing)
 
+[![Add to Discord](https://img.shields.io/badge/Add%20to-Discord-7289da?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/oauth2/authorize?client_id=1329852158241411072&permissions=1409222306998&integration_type=0&scope=bot)
 [![GitHub stars](https://img.shields.io/github/stars/bm-hien/Iris-Discord-AI?style=social)](https://github.com/bm-hien/Iris-Discord-AI/stargazers)
 [![GitHub issues](https://img.shields.io/github/issues/bm-hien/Iris-Discord-AI)](https://github.com/bm-hien/Iris-Discord-AI/issues)
 
@@ -108,7 +109,8 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 
 ## 🔗 Links
 
-- **📚 Documentation**: Check this README and code comments
+- **🤖 Add Public Bot**: [Invite to your server](https://discord.com/oauth2/authorize?client_id=1329852158241411072&permissions=1409222306998&integration_type=0&scope=bot)
+- **📚 Documentation**: [Online Docs](https://bm-hien.github.io/Iris-Discord-AI/)
 - **🐛 Bug Reports**: [Create an issue](https://github.com/bm-hien/Iris-Discord-AI/issues)
 - **💡 Feature Requests**: [Submit suggestions](https://github.com/bm-hien/Iris-Discord-AI/issues)
 - **💬 Support**: [Join our Discord](https://discord.gg/pevruS26Au)

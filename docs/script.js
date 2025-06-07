@@ -193,7 +193,7 @@ function createModal(title, content) {
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.innerHTML = `
-        <div class="modal-container">
+        <div class="modal-container large">
             <div class="modal-header">
                 <h2>${title}</h2>
                 <button class="modal-close">&times;</button>
@@ -290,62 +290,146 @@ function showNotification(message, type = 'info') {
 
 // Privacy Policy content
 const privacyPolicyContent = `
-    <h3><i class="fas fa-shield-alt"></i> Data Collection</h3>
-    <p>Iris AI Bot collects and processes the following information:</p>
-    <ul>
-        <li><strong>Message Content:</strong> To provide AI responses and maintain conversation context</li>
-        <li><strong>User IDs:</strong> To identify users and maintain personalized settings</li>
-        <li><strong>API Keys:</strong> Personal API keys are encrypted and stored securely</li>
-        <li><strong>Usage Statistics:</strong> To improve bot performance and features</li>
-        <li><strong>Media Files:</strong> Images, videos, and documents for AI analysis</li>
-    </ul>
+    <div class="instance-types-privacy">
+        <div class="instance-type public">
+            <h3><i class="fas fa-globe"></i> Public Instance Privacy</h3>
+            
+            <h4><i class="fas fa-database"></i> Data Collection</h4>
+            <p>Our public instance collects and processes the following information:</p>
+            <ul>
+                <li><strong>Message Content:</strong> To provide AI responses and maintain conversation context</li>
+                <li><strong>User IDs:</strong> To identify users and maintain personalized settings</li>
+                <li><strong>API Keys:</strong> User-provided API keys are <strong>encrypted using ChaCha20-Poly1305</strong> encryption</li>
+                <li><strong>Usage Statistics:</strong> To improve performance and detect abuse</li>
+                <li><strong>Media Files:</strong> Temporarily processed for AI analysis (not permanently stored)</li>
+                <li><strong>Server Analytics:</strong> Basic usage metrics for service improvement</li>
+            </ul>
 
-    <h3><i class="fas fa-database"></i> Data Storage</h3>
-    <p>Your data is stored with the following protections:</p>
-    <ul>
-        <li>Conversation history is stored locally and can be cleared anytime</li>
-        <li>API keys are encrypted using industry-standard encryption</li>
-        <li>No personal data is shared with third parties</li>
-        <li>Data retention follows Discord's guidelines and policies</li>
-        <li>Media processing is temporary and not permanently stored</li>
-    </ul>
+            <h4><i class="fas fa-shield-alt"></i> Data Security</h4>
+            <ul>
+                <li>All data stored on secure servers with industry-standard protection</li>
+                <li>API keys encrypted with military-grade ChaCha20-Poly1305 algorithm</li>
+                <li>Regular security audits and monitoring</li>
+                <li>Data retention policy: conversation history kept for service quality</li>
+                <li>No data sharing with third parties except AI providers (OpenAI, Google, etc.)</li>
+            </ul>
 
-    <h3><i class="fas fa-user-shield"></i> Your Rights</h3>
-    <p>You have the right to:</p>
-    <ul>
-        <li>Clear your conversation history using <code>/clear</code></li>
-        <li>Remove your API key using <code>/apikey remove</code></li>
-        <li>Request data deletion by contacting support</li>
-        <li>Access your stored data through available commands</li>
-        <li>Export your data using <code>/export</code></li>
-    </ul>
+            <h4><i class="fas fa-user-shield"></i> Your Rights</h4>
+            <ul>
+                <li>Request data deletion using <code>/clear-history</code> command</li>
+                <li>Remove stored API keys using <code>/api remove</code> command</li>
+                <li>Contact support for complete data removal</li>
+                <li>Opt-out of analytics collection (contact support)</li>
+            </ul>
+        </div>
 
-    <h3><i class="fas fa-globe"></i> Third-Party Services</h3>
-    <p>Iris integrates with:</p>
-    <ul>
-        <li><strong>AI Providers:</strong> Google Gemini, OpenAI, Anthropic, Groq</li>
-        <li><strong>Media Processing:</strong> For image, video, and document analysis</li>
-        <li><strong>Discord API:</strong> For bot functionality and server management</li>
-        <li><strong>URL Processing:</strong> For web content analysis and context</li>
-    </ul>
+        <div class="instance-type private">
+            <h3><i class="fas fa-home"></i> Private Instance Privacy</h3>
+            
+            <h4><i class="fas fa-database"></i> Data Collection</h4>
+            <p>Private instances provide maximum privacy and control:</p>
+            <ul>
+                <li><strong>Local Storage Only:</strong> All data stored on your own servers/hardware</li>
+                <li><strong>No External Transmission:</strong> Data never leaves your infrastructure</li>
+                <li><strong>API Keys:</strong> Encrypted locally using ChaCha20-Poly1305 and stored in your .env file</li>
+                <li><strong>Zero Analytics:</strong> No usage statistics collected or transmitted</li>
+                <li><strong>Complete Control:</strong> You manage all data retention and deletion policies</li>
+            </ul>
 
-    <h3><i class="fas fa-link"></i> URL and Media Processing</h3>
-    <p>When you share URLs or media:</p>
-    <ul>
-        <li>URLs are extracted and processed for context (with compatible models)</li>
-        <li>Images and videos are converted to base64 for AI analysis</li>
-        <li>PDF and document content is extracted temporarily</li>
-        <li>File size limits apply (25MB for most servers)</li>
-        <li>Processing is done securely and temporarily</li>
-    </ul>
+            <h4><i class="fas fa-lock"></i> Enhanced Security</h4>
+            <ul>
+                <li>Data never leaves your controlled environment</li>
+                <li>You control all encryption keys and security measures</li>
+                <li>No external dependencies for data storage</li>
+                <li>Compliance with your organization's security policies</li>
+                <li>Full audit trail control</li>
+                <li>Air-gapped deployment options available</li>
+            </ul>
 
-    <p class="notice">
-        <i class="fas fa-info-circle"></i>
-        This privacy policy is effective as of June 2025 and may be updated to reflect changes in our practices.
-        <br><br>
-        <strong>Contact:</strong> Join our <a href="https://discord.gg/pevruS26Au" target="_blank">Discord Server</a> for questions.
-    </p>
+            <h4><i class="fas fa-cog"></i> Your Control</h4>
+            <ul>
+                <li>Complete data ownership and sovereignty</li>
+                <li>Custom data retention policies</li>
+                <li>Local backup and recovery procedures</li>
+                <li>Integration with your existing security infrastructure</li>
+                <li>No third-party data processors involved</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="privacy-comparison">
+        <h3><i class="fas fa-balance-scale"></i> Privacy Comparison</h3>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Privacy Aspect</th>
+                    <th><i class="fas fa-globe"></i> Public Instance</th>
+                    <th><i class="fas fa-home"></i> Private Instance</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Data Location</strong></td>
+                    <td><span class="feature-value moderate">Our secure servers</span></td>
+                    <td><span class="feature-value good">Your infrastructure only</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Data Control</strong></td>
+                    <td><span class="feature-value moderate">Managed by us</span></td>
+                    <td><span class="feature-value good">100% your control</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Encryption</strong></td>
+                    <td><span class="feature-value good">ChaCha20-Poly1305</span></td>
+                    <td><span class="feature-value good">ChaCha20-Poly1305 (your keys)</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Analytics</strong></td>
+                    <td><span class="feature-value moderate">Basic usage metrics</span></td>
+                    <td><span class="feature-value good">Zero analytics</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Third-party Access</strong></td>
+                    <td><span class="feature-value moderate">AI providers only</span></td>
+                    <td><span class="feature-value good">None (direct API calls)</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Compliance</strong></td>
+                    <td><span class="feature-value moderate">Our compliance standards</span></td>
+                    <td><span class="feature-value good">Your compliance requirements</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Data Deletion</strong></td>
+                    <td><span class="feature-value moderate">On request via commands</span></td>
+                    <td><span class="feature-value good">Immediate local control</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="encryption-details">
+        <h3><i class="fas fa-key"></i> Encryption Implementation</h3>
+        <p>Both instance types use the same robust encryption for API key protection:</p>
+        <ul>
+            <li><strong>Algorithm:</strong> ChaCha20-Poly1305 (AEAD cipher)</li>
+            <li><strong>Key Length:</strong> 256 bits (32 bytes)</li>
+            <li><strong>Nonce:</strong> 96 bits (12 bytes) - randomly generated per encryption</li>
+            <li><strong>Authentication:</strong> 128-bit Poly1305 authentication tag</li>
+            <li><strong>Format:</strong> <code>nonce:ciphertext:auth_tag</code> (all base64 encoded)</li>
+        </ul>
+        <p><strong>Private Instance Advantage:</strong> You control the encryption keys and can implement additional security layers.</p>
+    </div>
+
+    <div class="contact-section">
+        <h3><i class="fas fa-envelope"></i> Privacy Questions?</h3>
+        <p>For privacy-related questions or concerns:</p>
+        <ul>
+            <li><strong>Public Instance:</strong> Contact our support team</li>
+            <li><strong>Private Instance:</strong> You have full control - refer to your local documentation</li>
+        </ul>
+    </div>
 `;
+
 
 // Terms of Service content
 const termsOfServiceContent = `
@@ -445,9 +529,6 @@ function addLegalButtons() {
                 </button>
                 <button class="legal-btn" data-modal="terms">
                     <i class="fas fa-file-contract"></i> Terms of Service
-                </button>
-                <button class="legal-btn" data-modal="legal">
-                    <i class="fas fa-balance-scale"></i> Legal Info
                 </button>
             </div>
         `;

@@ -839,3 +839,334 @@ html {
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(52, 152, 219, 0.8);
 }
+
+/* Instance Options Section */
+.instances-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+.instance-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 2rem;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.instance-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent-color), var(--secondary-color));
+    transition: height 0.3s ease;
+}
+
+.instance-card:hover::before {
+    height: 8px;
+}
+
+.instance-card.public {
+    border-color: rgba(52, 152, 219, 0.3);
+}
+
+.instance-card.private {
+    border-color: rgba(155, 89, 182, 0.3);
+}
+
+.instance-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.instance-header i {
+    font-size: 2rem;
+    color: var(--accent-color);
+}
+
+.instance-header h3 {
+    margin: 0;
+    flex: 1;
+}
+
+.instance-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.instance-badge.free {
+    background: rgba(46, 204, 113, 0.2);
+    color: #2ecc71;
+    border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.instance-badge.premium {
+    background: rgba(155, 89, 182, 0.2);
+    color: #9b59b6;
+    border: 1px solid rgba(155, 89, 182, 0.3);
+}
+
+.instance-features {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0;
+}
+
+.instance-features li {
+    padding: 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.instance-features i.fa-check {
+    color: #2ecc71;
+}
+
+.instance-features i.fa-info-circle {
+    color: #f39c12;
+}
+
+.instance-features i.fa-cog {
+    color: #e74c3c;
+}
+
+.btn-full {
+    width: 100%;
+    text-align: center;
+    margin: 1.5rem 0 1rem 0;
+}
+
+.instance-note {
+    text-align: center;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* Comparison Table */
+.comparison-table {
+    margin-top: 3rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 2rem;
+}
+
+.comparison-table h3 {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: var(--accent-color);
+}
+
+.comparison-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.comparison-table th,
+.comparison-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.comparison-table th {
+    background: rgba(255, 255, 255, 0.05);
+    font-weight: 600;
+    color: var(--accent-color);
+}
+
+.feature-value {
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.feature-value.good {
+    background: rgba(46, 204, 113, 0.2);
+    color: #2ecc71;
+}
+
+.feature-value.moderate {
+    background: rgba(243, 156, 18, 0.2);
+    color: #f39c12;
+}
+
+/* Privacy Policy & Terms Enhancements */
+.instance-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+.instance-type {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    padding: 1.5rem;
+    border-left: 4px solid;
+}
+
+.instance-type.public {
+    border-left-color: #3498db;
+}
+
+.instance-type.private {
+    border-left-color: #9b59b6;
+}
+
+.data-collection-section h4,
+.storage-section h4,
+.rights-section h4,
+.service-types h4,
+.prohibited-section h4,
+.limitations-section h4,
+.enforcement-section h4,
+.support-section h4 {
+    color: var(--accent-color);
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.service-types {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin: 1.5rem 0;
+}
+
+.service-type {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .instances-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .instance-info,
+    .service-types {
+        grid-template-columns: 1fr;
+    }
+    
+    .comparison-table {
+        overflow-x: auto;
+    }
+    
+    .comparison-table table {
+        min-width: 600px;
+    }
+}
+
+.instance-types-privacy {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+.instance-type.public {
+    border-left: 4px solid #3498db;
+    background: rgba(52, 152, 219, 0.1);
+    padding: 1.5rem;
+    border-radius: 8px;
+}
+
+.instance-type.private {
+    border-left: 4px solid #9b59b6;
+    background: rgba(155, 89, 182, 0.1);
+    padding: 1.5rem;
+    border-radius: 8px;
+}
+
+.privacy-comparison {
+    margin: 2rem 0;
+}
+
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.comparison-table th,
+.comparison-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.comparison-table th {
+    background: rgba(255, 255, 255, 0.1);
+    font-weight: 600;
+}
+
+.feature-value {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.feature-value.good {
+    background: rgba(46, 204, 113, 0.2);
+    color: #2ecc71;
+}
+
+.feature-value.moderate {
+    background: rgba(241, 196, 15, 0.2);
+    color: #f1c40f;
+}
+
+.encryption-details {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin: 2rem 0;
+}
+
+.contact-section {
+    background: rgba(52, 152, 219, 0.1);
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+    margin: 2rem 0;
+}
+
+/* Responsive Design for Privacy Content */
+@media (max-width: 768px) {
+    .instance-types-privacy {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .comparison-table {
+        font-size: 0.9rem;
+    }
+    
+    .comparison-table th,
+    .comparison-table td {
+        padding: 0.75rem 0.5rem;
+    }
+}
