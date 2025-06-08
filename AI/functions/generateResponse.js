@@ -59,7 +59,7 @@ async function generateResponse(userMessage, userId, userInfo = {}, imageAttachm
     const userApiKey = userApiKeyResult && typeof userApiKeyResult === 'string' ? userApiKeyResult : null;
     
     // Default API key from your configuration
-    const defaultApiKey = config.DEFAULT_GEMINI_API_KEY;
+    const defaultApiKey = config.ai.defaultApiKeys.gemini;
     
     // Use the appropriate API key
     const apiKey = userApiKey || defaultApiKey;
@@ -425,6 +425,12 @@ If someone sends images, describe the image content in detail in English.
         temperature: 0.7,
         topP: 0.8,
         topK: 40,
+        safetySettings: [
+          {
+            category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+            threshold: "BLOCK_LOW_AND_ABOVE",
+          }
+        ]
       };
 
       // IMPORTANT: Due to Gemini API limitation, we can't use both URL context and function calling
@@ -656,7 +662,7 @@ If someone sends images, describe the image content in detail in English.
     
     // Ensure response is never undefined or null
     if (!response) {
-      response = "Request received.";
+      response = ":pray:";
     }
     
     // Format the response for better display
