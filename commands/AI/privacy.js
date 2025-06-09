@@ -1,7 +1,10 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
 const { getUserInfo } = require('../../events/utils/userInfo');
-const { getUserPrivacySettings, updateUserPrivacySettings } = require('../../AI/events/database');
-
+const { getUserPrivacySettings, updateUserPrivacySettings, clearConversationHistory, removeUserApiKey } = require('../../AI/events/database');
+const { getUserApiKey, getCustomSystemMessage } = require('../../AI/events/database');
+const path = require('path');
+const fs = require('fs');
+const { AttachmentBuilder } = require('discord.js');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('privacy')
@@ -9,18 +12,18 @@ module.exports = {
     .addSubcommand(subcommand =>
       subcommand
         .setName('view')
-        .setDescription('View what data the bot can access about you')
-        .addBooleanOption(option =>
-          option.setName('detailed')
-            .setDescription('Show detailed breakdown of accessible data')
-            .setRequired(false)))
+        .setDescription('View what data the bot can access about you'))
     .addSubcommand(subcommand =>
       subcommand
         .setName('settings')
-        .setDescription('Interactive privacy settings panel')
+        .setDescription('Configure your privacy preferences'))
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('quick')
+        .setDescription('Quick privacy settings')
         .addBooleanOption(option =>
           option.setName('share_presence')
-            .setDescription('Allow bot to see your online status and activities')
+            .setDescription('Allow bot to see your gaming/activity status')
             .setRequired(false))
         .addBooleanOption(option =>
           option.setName('share_server_info')
@@ -28,36 +31,53 @@ module.exports = {
             .setRequired(false))),
 
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
-    
-    const subcommand = interaction.options.getSubcommand();
-    
-    if (subcommand === 'view') {
-      await handleViewData(interaction);
-    } else if (subcommand === 'settings') {
-      // Check if user provided options directly
-      const sharePresence = interaction.options.getBoolean('share_presence');
-      const shareServerInfo = interaction.options.getBoolean('share_server_info');
+    try {
+      await interaction.deferReply({ ephemeral: true });
       
-      if (sharePresence !== null || shareServerInfo !== null) {
-        // Handle direct settings update
-        await handleDirectSettingsUpdate(interaction, { sharePresence, shareServerInfo });
-      } else {
-        // Show interactive settings panel
-        await handleInteractiveSettings(interaction);
+      const subcommand = interaction.options.getSubcommand();
+      
+      switch (subcommand) {
+        case 'view':
+          await handlePrivacyView(interaction);
+          break;
+        case 'settings':
+          await handlePrivacySettings(interaction);
+          break;
+        case 'quick':
+          await handleQuickSettings(interaction);
+          break;
+        default:
+          await interaction.editReply({
+            content: '❌ Unknown subcommand. Please try again.',
+            ephemeral: true
+          });
+      }
+    } catch (error) {
+      console.error('Privacy command error:', error);
+      
+      const errorMessage = {
+        content: '❌ An error occurred while processing your privacy request. Please try again later.',
+        ephemeral: true
+      };
+      
+      if (interaction.deferred && !interaction.replied) {
+        await interaction.editReply(errorMessage);
+      } else if (!interaction.replied) {
+        await interaction.reply(errorMessage);
       }
     }
   }
 };
 
-async function handleViewData(interaction) {
-  const detailed = interaction.options.getBoolean('detailed') || false;
-  
+// ===========================================
+// PRIVACY VIEW HANDLER
+// ===========================================
+async function handlePrivacyView(interaction) {
   try {
-    // Get current privacy settings
+    // Get user privacy settings
     const privacySettings = await getUserPrivacySettings(interaction.user.id);
     
-    // Create a mock message to get user info
+    // Create mock message for getUserInfo
     const mockMessage = {
       author: interaction.user,
       guild: interaction.guild,
@@ -67,71 +87,41 @@ async function handleViewData(interaction) {
     
     const userInfo = await getUserInfo(mockMessage);
     
+    // Create main embed
     const embed = new EmbedBuilder()
       .setColor(0x3498DB)
       .setTitle('🔒 Your Privacy Overview')
-      .setDescription('Here\'s what data the bot can currently access about you:');
-    
-    if (detailed) {
-      embed.addFields([
+      .setDescription('Here\'s what data the bot can currently access about you:')
+      .addFields([
         {
-          name: '👤 Basic Information (Always Accessible)',
-          value: `• Username: ${userInfo.username}\n• User ID: ${interaction.user.id}\n• Bot Status: ${userInfo.isBot ? 'Yes' : 'No'}`,
+          name: '👤 Basic Information (Always Available)',
+          value: `• **Username**: ${userInfo.username || 'Unknown'}\n• **User ID**: ${interaction.user.id}\n• **Server**: ${userInfo.serverName || 'Direct Message'}`,
           inline: false
         },
         {
           name: '🎮 Presence & Activity Data',
-          value: privacySettings.share_presence ? 
-            (userInfo.presence ? 
-              `✅ **Enabled**\n• Status: ${userInfo.presence.statusText || 'Unknown'}\n• Activity: ${userInfo.presence.currentGame || 'None'}\n• Custom Status: ${userInfo.presence.customStatus || 'None'}` :
-              '✅ **Enabled** (No current activity)') :
-            '❌ **Disabled** - Your presence data is private',
-          inline: false
+          value: createPresenceStatusText(privacySettings, userInfo),
+          inline: true
         },
         {
           name: '🏰 Server Information',
-          value: privacySettings.share_server_info ? 
-            (userInfo.serverName ? 
-              `✅ **Enabled**\n• Server: ${userInfo.serverName}\n• Roles: ${userInfo.roles || 'None'}\n• Admin: ${userInfo.isAdmin ? 'Yes' : 'No'}\n• Owner: ${userInfo.isOwner ? 'Yes' : 'No'}` :
-              '✅ **Enabled** (DM context)') :
-            '❌ **Disabled** - Your server data is private',
-          inline: false
-        }
-      ]);
-    } else {
-      const enabledFeatures = [];
-      const disabledFeatures = [];
-      
-      if (privacySettings.share_presence) enabledFeatures.push('🎮 Presence & Activity');
-      else disabledFeatures.push('🎮 Presence & Activity');
-      
-      if (privacySettings.share_server_info) enabledFeatures.push('🏰 Server Information');
-      else disabledFeatures.push('🏰 Server Information');
-      
-      embed.addFields([
-        {
-          name: '📊 Always Accessible',
-          value: '• **Basic Info**: Username, User ID\n• **Chat History**: Previous conversations with the bot\n• **API Keys**: Your encrypted personal API keys (if set)',
-          inline: false
-        },
-        {
-          name: '✅ Currently Shared',
-          value: enabledFeatures.length > 0 ? enabledFeatures.join('\n• ') : 'None - Maximum privacy mode!',
+          value: createServerInfoStatusText(privacySettings, userInfo),
           inline: true
         },
         {
-          name: '❌ Private (Not Shared)',
-          value: disabledFeatures.length > 0 ? disabledFeatures.join('\n• ') : 'None - All optional data is shared',
-          inline: true
+          name: '📊 Data Summary',
+          value: createDataSummary(privacySettings),
+          inline: false
         }
-      ]);
-    }
-    
+      ])
+      .setFooter({ text: '🛡️ Privacy settings can be changed anytime' })
+      .setTimestamp();
+
     // Create action buttons
     const actionRow = new ActionRowBuilder()
       .addComponents(
         new ButtonBuilder()
-          .setCustomId('privacy_settings')
+          .setCustomId('privacy_change_settings')
           .setLabel('⚙️ Change Settings')
           .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
@@ -139,26 +129,17 @@ async function handleViewData(interaction) {
           .setLabel('🗑️ Clear Data')
           .setStyle(ButtonStyle.Danger),
         new ButtonBuilder()
-          .setCustomId('privacy_refresh')
-          .setLabel('🔄 Refresh View')
+          .setCustomId('privacy_export_data')
+          .setLabel('📤 Export Data')
           .setStyle(ButtonStyle.Secondary)
       );
-    
-    embed.addFields({
-      name: '⚙️ Quick Actions',
-      value: '• **Change Settings**: Modify your privacy preferences\n• **Clear Data**: Delete conversation history\n• **Refresh**: Update this view with current data',
-      inline: false
-    });
-    
-    embed.setFooter({ text: '🛡️ Your privacy is protected by default' })
-         .setTimestamp();
-    
-    const response = await interaction.editReply({ 
-      embeds: [embed], 
-      components: [actionRow] 
+
+    const response = await interaction.editReply({
+      embeds: [embed],
+      components: [actionRow]
     });
 
-    // Handle button interactions
+    // Set up button collector
     const collector = response.createMessageComponentCollector({
       componentType: ComponentType.Button,
       time: 300000 // 5 minutes
@@ -166,94 +147,86 @@ async function handleViewData(interaction) {
 
     collector.on('collect', async (buttonInteraction) => {
       if (buttonInteraction.user.id !== interaction.user.id) {
-        await buttonInteraction.reply({
+        await safeReply(buttonInteraction, {
           content: '❌ You can only manage your own privacy settings.',
           ephemeral: true
         });
         return;
       }
 
-      await buttonInteraction.deferUpdate();
+      await safeDeferUpdate(buttonInteraction);
 
-      switch (buttonInteraction.customId) {
-        case 'privacy_settings':
-          await showSettingsPanel(buttonInteraction);
-          break;
-        case 'privacy_clear_data':
-          await showClearDataPanel(buttonInteraction);
-          break;
-        case 'privacy_refresh':
-          await handleViewData(buttonInteraction);
-          break;
-      }
-    });
-
-    collector.on('end', async () => {
-      // Disable buttons after timeout
-      const disabledRow = new ActionRowBuilder()
-        .addComponents(
-          ...actionRow.components.map(button => 
-            ButtonBuilder.from(button).setDisabled(true)
-          )
-        );
-      
       try {
-        await interaction.editReply({ components: [disabledRow] });
+        switch (buttonInteraction.customId) {
+          case 'privacy_change_settings':
+            await handlePrivacySettings(buttonInteraction);
+            break;
+          case 'privacy_clear_data':
+            await handleClearData(buttonInteraction);
+            break;
+          case 'privacy_export_data':
+            await handleExportData(buttonInteraction);
+            break;
+        }
       } catch (error) {
-        console.error('Error disabling privacy buttons:', error);
+        console.error('Button interaction error:', error);
+        await safeFollowUp(buttonInteraction, {
+          content: '❌ An error occurred. Please try again.',
+          ephemeral: true
+        });
       }
     });
-    
+
+    collector.on('end', () => {
+      disableButtons(interaction, [actionRow]);
+    });
+
   } catch (error) {
     console.error('Error in privacy view:', error);
-    await interaction.editReply({ 
-      content: '❌ Error retrieving privacy information. Please try again later.',
-      ephemeral: true 
-    });
+    throw error;
   }
 }
 
-async function handleInteractiveSettings(interaction) {
+// ===========================================
+// PRIVACY SETTINGS HANDLER
+// ===========================================
+async function handlePrivacySettings(interaction) {
   try {
     const currentSettings = await getUserPrivacySettings(interaction.user.id);
     
     const embed = new EmbedBuilder()
       .setColor(0x9B59B6)
-      .setTitle('⚙️ Privacy Settings Panel')
-      .setDescription('Customize what data you share with the bot. Click the buttons below to toggle settings.')
+      .setTitle('⚙️ Privacy Settings')
+      .setDescription('Configure what data you share with the bot. All changes are saved automatically.')
       .addFields([
         {
           name: '🎮 Presence & Activity Sharing',
-          value: currentSettings.share_presence ? 
-            '✅ **Currently: ENABLED**\nBot can see your gaming status, activities, and online status' :
-            '❌ **Currently: DISABLED** (Default)\nYour activities remain completely private',
+          value: `**Status**: ${currentSettings.share_presence ? '✅ ENABLED' : '❌ DISABLED (Default)'}\n${currentSettings.share_presence ? 'Bot can see your gaming status and activities' : 'Your activities remain completely private'}`,
           inline: false
         },
         {
           name: '🏰 Server Information Sharing',
-          value: currentSettings.share_server_info ? 
-            '✅ **Currently: ENABLED** (Default)\nBot can see your server roles and permissions for moderation' :
-            '❌ **Currently: DISABLED**\nYour server data remains private',
+          value: `**Status**: ${currentSettings.share_server_info ? '✅ ENABLED (Default)' : '❌ DISABLED'}\n${currentSettings.share_server_info ? 'Bot can see your server roles for moderation' : 'Your server data remains private'}`,
           inline: false
         }
       ])
-      .setFooter({ text: '🛡️ Changes are saved instantly' })
+      .setFooter({ text: '🛡️ Default: Maximum privacy (presence disabled)' })
       .setTimestamp();
 
-    // Create toggle buttons
-    const settingsRow = new ActionRowBuilder()
+    // Toggle buttons
+    const toggleRow = new ActionRowBuilder()
       .addComponents(
         new ButtonBuilder()
           .setCustomId('toggle_presence')
-          .setLabel(currentSettings.share_presence ? '🎮 Disable Presence' : '🎮 Enable Presence')
+          .setLabel(`🎮 ${currentSettings.share_presence ? 'Disable' : 'Enable'} Presence`)
           .setStyle(currentSettings.share_presence ? ButtonStyle.Danger : ButtonStyle.Success),
         new ButtonBuilder()
           .setCustomId('toggle_server_info')
-          .setLabel(currentSettings.share_server_info ? '🏰 Disable Server Info' : '🏰 Enable Server Info')
+          .setLabel(`🏰 ${currentSettings.share_server_info ? 'Disable' : 'Enable'} Server Info`)
           .setStyle(currentSettings.share_server_info ? ButtonStyle.Danger : ButtonStyle.Success)
       );
 
-    // Create action buttons (removed privacy_view_data button)
+    // Action buttons
     const actionRow = new ActionRowBuilder()
       .addComponents(
         new ButtonBuilder()
@@ -261,17 +234,21 @@ async function handleInteractiveSettings(interaction) {
           .setLabel('🔄 Reset to Defaults')
           .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
-          .setCustomId('privacy_close')
+          .setCustomId('privacy_back_to_view')
+          .setLabel('👁️ View Data')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId('privacy_done')
           .setLabel('✅ Done')
           .setStyle(ButtonStyle.Primary)
       );
 
-    const response = await interaction.editReply({
+    const response = await safeEditReply(interaction, {
       embeds: [embed],
-      components: [settingsRow, actionRow]
+      components: [toggleRow, actionRow]
     });
 
-    // Handle button interactions
+    // Set up button collector
     const collector = response.createMessageComponentCollector({
       componentType: ComponentType.Button,
       time: 600000 // 10 minutes
@@ -279,137 +256,215 @@ async function handleInteractiveSettings(interaction) {
 
     collector.on('collect', async (buttonInteraction) => {
       if (buttonInteraction.user.id !== interaction.user.id) {
-        await buttonInteraction.reply({
+        await safeReply(buttonInteraction, {
           content: '❌ You can only manage your own privacy settings.',
           ephemeral: true
         });
         return;
       }
 
-      await buttonInteraction.deferUpdate();
+      await safeDeferUpdate(buttonInteraction);
 
-      switch (buttonInteraction.customId) {
-        case 'toggle_presence':
-          await togglePrivacySetting(buttonInteraction, 'share_presence');
-          break;
-        case 'toggle_server_info':
-          await togglePrivacySetting(buttonInteraction, 'share_server_info');
-          break;
-        case 'privacy_reset_defaults':
-          await resetToDefaults(buttonInteraction);
-          break;
-        case 'privacy_close':
-          await closePrivacyPanel(buttonInteraction);
-          break;
+      try {
+        switch (buttonInteraction.customId) {
+          case 'toggle_presence':
+            await toggleSetting(buttonInteraction, 'share_presence');
+            break;
+          case 'toggle_server_info':
+            await toggleSetting(buttonInteraction, 'share_server_info');
+            break;
+          case 'privacy_reset_defaults':
+            await resetToDefaults(buttonInteraction);
+            break;
+          case 'privacy_back_to_view':
+            await handlePrivacyView(buttonInteraction);
+            break;
+          case 'privacy_done':
+            await showCompletionMessage(buttonInteraction);
+            break;
+        }
+      } catch (error) {
+        console.error('Settings button error:', error);
+        await safeFollowUp(buttonInteraction, {
+          content: '❌ An error occurred while updating settings.',
+          ephemeral: true
+        });
       }
     });
 
-    collector.on('end', async () => {
-      try {
-        const disabledComponents = [settingsRow, actionRow].map(row =>
-          new ActionRowBuilder().addComponents(
-            ...row.components.map(button => 
-              ButtonBuilder.from(button).setDisabled(true)
-            )
-          )
-        );
-        await interaction.editReply({ components: disabledComponents });
-      } catch (error) {
-        console.error('Error disabling privacy settings buttons:', error);
-      }
+    collector.on('end', () => {
+      disableButtons(interaction, [toggleRow, actionRow]);
     });
 
   } catch (error) {
-    console.error('Error in interactive settings:', error);
-    await interaction.editReply({
-      content: '❌ Error loading privacy settings. Please try again later.',
-      ephemeral: true
-    });
+    console.error('Error in privacy settings:', error);
+    throw error;
   }
 }
 
-async function togglePrivacySetting(interaction, settingName) {
+// ===========================================
+// QUICK SETTINGS HANDLER
+// ===========================================
+async function handleQuickSettings(interaction) {
   try {
-    const currentSettings = await getUserPrivacySettings(interaction.user.id);
-    const newValue = currentSettings[settingName] ? 0 : 1;
+    const sharePresence = interaction.options.getBoolean('share_presence');
+    const shareServerInfo = interaction.options.getBoolean('share_server_info');
     
+    if (sharePresence === null && shareServerInfo === null) {
+      await interaction.editReply({
+        content: '❌ Please specify at least one setting to update.\n\n**Usage:**\n• `/privacy quick share_presence:true` - Enable presence sharing\n• `/privacy quick share_server_info:false` - Disable server info sharing',
+        ephemeral: true
+      });
+      return;
+    }
+
+    // Update settings
     const updates = {};
-    updates[settingName] = newValue;
+    if (sharePresence !== null) updates.share_presence = sharePresence ? 1 : 0;
+    if (shareServerInfo !== null) updates.share_server_info = shareServerInfo ? 1 : 0;
     
     await updateUserPrivacySettings(interaction.user.id, updates);
     
-    // Refresh the settings panel
-    await handleInteractiveSettings(interaction);
-    
-    // Show success message
-    const settingDisplayName = settingName === 'share_presence' ? 'Presence Sharing' : 'Server Info Sharing';
-    const statusText = newValue ? 'enabled' : 'disabled';
-    
-    await interaction.followUp({
-      content: `✅ **${settingDisplayName}** has been **${statusText}**!`,
-      ephemeral: true
-    });
-    
-  } catch (error) {
-    console.error('Error toggling privacy setting:', error);
-    await interaction.followUp({
-      content: '❌ Error updating privacy setting. Please try again.',
-      ephemeral: true
-    });
-  }
-}
+    // Create confirmation embed
+    const embed = new EmbedBuilder()
+      .setColor(0x00FF00)
+      .setTitle('✅ Privacy Settings Updated')
+      .setDescription('Your privacy preferences have been saved successfully.');
 
-async function resetToDefaults(interaction) {
-  try {
-    // Default settings: presence off, server info on
-    const defaultSettings = {
-      share_presence: 0,
-      share_server_info: 1
-    };
+    const fields = [];
+    if (sharePresence !== null) {
+      fields.push({
+        name: '🎮 Presence & Activity Sharing',
+        value: sharePresence ? 
+          '✅ **ENABLED** - Bot can see your gaming status and activities' :
+          '❌ **DISABLED** - Your activities remain private',
+        inline: false
+      });
+    }
     
-    await updateUserPrivacySettings(interaction.user.id, defaultSettings);
-    
-    // Refresh the panel
-    await handleInteractiveSettings(interaction);
-    
-    await interaction.followUp({
-      content: '✅ Privacy settings have been reset to secure defaults!\n• 🎮 **Presence sharing**: Disabled\n• 🏰 **Server info sharing**: Enabled',
-      ephemeral: true
-    });
-    
-  } catch (error) {
-    console.error('Error resetting privacy settings:', error);
-    await interaction.followUp({
-      content: '❌ Error resetting privacy settings. Please try again.',
-      ephemeral: true
-    });
-  }
-}
+    if (shareServerInfo !== null) {
+      fields.push({
+        name: '🏰 Server Information Sharing',
+        value: shareServerInfo ? 
+          '✅ **ENABLED** - Bot can see your server roles and permissions' :
+          '❌ **DISABLED** - Your server data remains private',
+        inline: false
+      });
+    }
 
-async function closePrivacyPanel(interaction) {
-  const embed = new EmbedBuilder()
-    .setColor(0x27AE60)
-    .setTitle('✅ Privacy Settings Saved')
-    .setDescription('Your privacy preferences have been updated successfully.')
-    .addFields({
-      name: '💡 Remember',
-      value: '• Use `/privacy view` to see what data is accessible\n• Use `/clear` to delete conversation history\n• Your settings are saved automatically',
+    embed.addFields(fields);
+    embed.addFields({
+      name: '💡 More Options',
+      value: '• Use `/privacy view` to see all accessible data\n• Use `/privacy settings` for interactive configuration',
       inline: false
-    })
-    .setFooter({ text: 'You can change these settings anytime' })
-    .setTimestamp();
+    });
+    
+    embed.setFooter({ text: 'Settings can be changed anytime' })
+         .setTimestamp();
 
-  await interaction.editReply({
-    embeds: [embed],
-    components: []
+    await interaction.editReply({ embeds: [embed] });
+
+  } catch (error) {
+    console.error('Error in quick settings:', error);
+    throw error;
+  }
+}
+
+// ===========================================
+// HELPER FUNCTIONS
+// ===========================================
+
+function createPresenceStatusText(privacySettings, userInfo) {
+  if (!privacySettings.share_presence) {
+    return '❌ **DISABLED** (Default)\nYour presence data is completely private';
+  }
+  
+  if (!userInfo.presence) {
+    return '✅ **ENABLED**\nNo current activity detected';
+  }
+  
+  let statusText = '✅ **ENABLED**\n';
+  statusText += `• Status: ${userInfo.presence.statusText || 'Unknown'}\n`;
+  statusText += `• Activity: ${userInfo.presence.currentGame || 'None'}\n`;
+  if (userInfo.presence.customStatus) {
+    statusText += `• Custom: ${userInfo.presence.customStatus}`;
+  }
+  
+  return statusText;
+}
+
+function createServerInfoStatusText(privacySettings, userInfo) {
+  if (!privacySettings.share_server_info) {
+    return '❌ **DISABLED**\nYour server data is private';
+  }
+  
+  if (!userInfo.serverName) {
+    return '✅ **ENABLED**\nDirect message context';
+  }
+  
+  let infoText = '✅ **ENABLED** (Default)\n';
+  infoText += `• Server: ${userInfo.serverName}\n`;
+  infoText += `• Roles: ${userInfo.roles || 'None'}\n`;
+  infoText += `• Admin: ${userInfo.isAdmin ? 'Yes' : 'No'}`;
+  
+  return infoText;
+}
+
+function createDataSummary(privacySettings) {
+  const enabledCount = (privacySettings.share_presence ? 1 : 0) + (privacySettings.share_server_info ? 1 : 0);
+  const totalOptional = 2;
+  
+  let summary = `**Privacy Level**: ${enabledCount === 0 ? 'Maximum' : enabledCount === 1 ? 'Balanced' : 'Open'}\n`;
+  summary += `**Optional Data Shared**: ${enabledCount}/${totalOptional}\n`;
+  summary += `**Always Available**: Basic info, chat history, API keys`;
+  
+  return summary;
+}
+
+async function toggleSetting(interaction, settingName) {
+  const currentSettings = await getUserPrivacySettings(interaction.user.id);
+  const newValue = currentSettings[settingName] ? 0 : 1;
+  
+  const updates = {};
+  updates[settingName] = newValue;
+  
+  await updateUserPrivacySettings(interaction.user.id, updates);
+  
+  // Refresh the settings panel
+  await handlePrivacySettings(interaction);
+  
+  // Show success message
+  const settingDisplayName = settingName === 'share_presence' ? 'Presence Sharing' : 'Server Info Sharing';
+  const statusText = newValue ? 'enabled' : 'disabled';
+  
+  await safeFollowUp(interaction, {
+    content: `✅ **${settingDisplayName}** has been **${statusText}**!`,
+    ephemeral: true
   });
 }
 
-async function showClearDataPanel(interaction) {
+async function resetToDefaults(interaction) {
+  const defaultSettings = {
+    share_presence: 0,        // Default: OFF (privacy first)
+    share_server_info: 1      // Default: ON (needed for moderation)
+  };
+  
+  await updateUserPrivacySettings(interaction.user.id, defaultSettings);
+  
+  // Refresh the panel
+  await handlePrivacySettings(interaction);
+  
+  await safeFollowUp(interaction, {
+    content: '✅ Privacy settings reset to secure defaults!\n• 🎮 **Presence sharing**: Disabled\n• 🏰 **Server info sharing**: Enabled',
+    ephemeral: true
+  });
+}
+
+async function handleClearData(interaction) {
   const embed = new EmbedBuilder()
     .setColor(0xE74C3C)
     .setTitle('🗑️ Clear Your Data')
-    .setDescription('Choose what data you want to delete:')
+    .setDescription('Choose what data you want to delete. **This action cannot be undone!**')
     .addFields([
       {
         name: '💬 Conversation History',
@@ -420,80 +475,301 @@ async function showClearDataPanel(interaction) {
         name: '🔐 API Keys',
         value: 'Remove your stored encrypted API keys',
         inline: false
-      },
-      {
-        name: '⚠️ Warning',
-        value: 'This action cannot be undone!',
-        inline: false
       }
     ]);
 
   const clearRow = new ActionRowBuilder()
     .addComponents(
       new ButtonBuilder()
-        .setCustomId('clear_conversations')
+        .setCustomId('confirm_clear_conversations')
         .setLabel('💬 Clear Conversations')
         .setStyle(ButtonStyle.Danger),
       new ButtonBuilder()
-        .setCustomId('clear_api_keys')
+        .setCustomId('confirm_clear_api_keys')
         .setLabel('🔐 Clear API Keys')
         .setStyle(ButtonStyle.Danger),
       new ButtonBuilder()
-        .setCustomId('clear_cancel')
+        .setCustomId('cancel_clear')
         .setLabel('❌ Cancel')
         .setStyle(ButtonStyle.Secondary)
     );
 
-  await interaction.editReply({
+  await safeEditReply(interaction, {
     embeds: [embed],
     components: [clearRow]
   });
+
+  // Handle clear data buttons (simplified for space)
+  const collector = interaction.fetchReply().then(response => 
+    response.createMessageComponentCollector({
+      componentType: ComponentType.Button,
+      time: 60000 // 1 minute for destructive actions
+    })
+  );
+
+  (await collector).on('collect', async (buttonInteraction) => {
+    if (buttonInteraction.user.id !== interaction.user.id) {
+      await safeReply(buttonInteraction, {
+        content: '❌ You can only manage your own data.',
+        ephemeral: true
+      });
+      return;
+    }
+
+    await safeDeferUpdate(buttonInteraction);
+
+    try {
+      switch (buttonInteraction.customId) {
+        case 'confirm_clear_conversations':
+          await clearConversationHistory(interaction.user.id);
+          await safeEditReply(buttonInteraction, {
+            content: '✅ **Conversation history cleared!** All your previous conversations have been deleted.',
+            embeds: [],
+            components: []
+          });
+          break;
+        case 'confirm_clear_api_keys':
+          await removeUserApiKey(interaction.user.id);
+          await safeEditReply(buttonInteraction, {
+            content: '✅ **API keys removed!** All your stored API keys have been deleted.',
+            embeds: [],
+            components: []
+          });
+          break;
+        case 'cancel_clear':
+          await handlePrivacyView(buttonInteraction);
+          break;
+      }
+    } catch (error) {
+      console.error('Clear data error:', error);
+      await safeEditReply(buttonInteraction, {
+        content: '❌ An error occurred while clearing data. Please try again.',
+        embeds: [],
+        components: []
+      });
+    }
+  });
 }
 
-async function handleDirectSettingsUpdate(interaction, { sharePresence, shareServerInfo }) {
+async function handleExportData(interaction) {
   try {
-    const updates = {};
-    if (sharePresence !== null) updates.share_presence = sharePresence ? 1 : 0;
-    if (shareServerInfo !== null) updates.share_server_info = shareServerInfo ? 1 : 0;
-    
-    await updateUserPrivacySettings(interaction.user.id, updates);
-    
-    const embed = new EmbedBuilder()
+    const userId = interaction.user.id;
+    const username = interaction.user.username;
+
+    // Get user's configurations (same as export command)
+    const [apiKeyInfo, customSystem] = await Promise.all([
+      getUserApiKey(userId),
+      getCustomSystemMessage(userId)
+    ]);
+
+    if (!apiKeyInfo && !customSystem) {
+      const noConfigEmbed = new EmbedBuilder()
+        .setColor(0x3498DB)
+        .setTitle('📤 Export Your Data')
+        .setDescription("You don't have any custom configurations to export. Set up API keys or custom personalities first!")
+        .addFields({
+          name: '💡 What can be exported?',
+          value: '• API key configurations (masked for security)\n• Custom personality settings\n• Provider preferences',
+          inline: false
+        })
+        .setTimestamp();
+      
+      await safeEditReply(interaction, {
+        embeds: [noConfigEmbed],
+        components: []
+      });
+      return;
+    }
+
+    // Create configuration data
+    const configData = {
+      version: '1.0.2',
+      timestamp: new Date().toISOString(),
+      user: {
+        id: userId,
+        username: username
+      },
+      apiKey: apiKeyInfo ? {
+        provider: apiKeyInfo.provider || 'gemini',
+        model: apiKeyInfo.model || 'gemini-2.0-flash',
+        endpoint: apiKeyInfo.endpoint || 'https://generativelanguage.googleapis.com/v1beta/openai/',
+        // Masked API key for security
+        key: apiKeyInfo.api_key ? `${apiKeyInfo.api_key.substring(0, 4)}...${apiKeyInfo.api_key.substring(apiKeyInfo.api_key.length - 4)}` : null
+      } : null,
+      customSystem: customSystem ? {
+        botName: customSystem.bot_name || 'Iris',
+        personality: customSystem.personality || null
+      } : null
+    };
+
+    // Create JSON file content
+    const fileContent = JSON.stringify(configData, null, 2);
+    const fileName = `iris_privacy_export_${username}_${Date.now()}.json`;
+
+    // Create temporary file
+    const tempDir = path.join(__dirname, '../../temp');
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+
+    const filePath = path.join(tempDir, fileName);
+    fs.writeFileSync(filePath, fileContent);
+
+    // Create attachment
+    const attachment = new AttachmentBuilder(filePath, { name: fileName });
+
+    // Create embed
+    const exportEmbed = new EmbedBuilder()
       .setColor(0x00FF00)
-      .setTitle('✅ Privacy Settings Updated')
-      .setDescription('Your privacy preferences have been saved successfully.');
+      .setTitle('✅ Data Export Complete')
+      .setDescription('Your personal data has been exported successfully.')
+      .addFields([
+        { 
+          name: '🔑 Included Data', 
+          value: `${apiKeyInfo ? '✓ API Key Configuration (masked)\n' : ''}${customSystem ? '✓ Custom Personality Settings\n' : ''}`, 
+          inline: false 
+        },
+        { 
+          name: '🔒 Privacy Note', 
+          value: 'Actual API keys are masked for security. This export contains your configuration preferences only.', 
+          inline: false 
+        },
+        { 
+          name: '💡 Usage', 
+          value: 'This file can be used with `/import` command to transfer settings.', 
+          inline: false 
+        }
+      ])
+      .setTimestamp()
+      .setFooter({ text: `Data export for ${username}` });
 
-    const fields = [];
-    if (sharePresence !== null) {
-      fields.push({
-        name: '🎮 Presence & Activity',
-        value: sharePresence ? 
-          '✅ **Enabled** - Bot can see your gaming status and activities' :
-          '❌ **Disabled** - Your activities remain private',
-        inline: false
-      });
-    }
-    
-    if (shareServerInfo !== null) {
-      fields.push({
-        name: '🏰 Server Information',
-        value: shareServerInfo ? 
-          '✅ **Enabled** - Bot can see your server roles and permissions' :
-          '❌ **Disabled** - Your server data remains private',
-        inline: false
-      });
-    }
-
-    embed.addFields(fields);
-    embed.setFooter({ text: 'You can change these settings anytime with /privacy settings' })
-         .setTimestamp();
-    
-    await interaction.editReply({ embeds: [embed] });
-  } catch (error) {
-    console.error('Error updating privacy settings:', error);
-    await interaction.editReply({ 
-      content: '❌ Error updating privacy settings. Please try again later.',
-      ephemeral: true 
+    // Send response with file
+    await safeEditReply(interaction, {
+      embeds: [exportEmbed],
+      files: [attachment],
+      components: []
     });
+
+    // Delete temporary file after sending
+    setTimeout(() => {
+      try {
+        fs.unlinkSync(filePath);
+      } catch (err) {
+        console.error('Error deleting temporary file:', err);
+      }
+    }, 5000);
+
+  } catch (error) {
+    console.error('Error in handleExportData:', error);
+    
+    const errorEmbed = new EmbedBuilder()
+      .setColor(0xFF0000)
+      .setTitle('❌ Export Error')
+      .setDescription('There was an error exporting your data. Please try again later.')
+      .setTimestamp();
+    
+    await safeEditReply(interaction, {
+      embeds: [errorEmbed],
+      components: []
+    });
+  }
+}
+
+async function showCompletionMessage(interaction) {
+  const embed = new EmbedBuilder()
+    .setColor(0x27AE60)
+    .setTitle('✅ Privacy Settings Complete')
+    .setDescription('Your privacy preferences have been saved successfully.')
+    .addFields([
+      {
+        name: '💡 Quick Commands',
+        value: '• `/privacy view` - View accessible data\n• `/privacy settings` - Interactive settings\n• `/privacy quick` - Quick updates\n• `/clear` - Delete conversation history',
+        inline: false
+      }
+    ])
+    .setFooter({ text: 'Your privacy settings can be changed anytime' })
+    .setTimestamp();
+
+  await safeEditReply(interaction, {
+    embeds: [embed],
+    components: []
+  });
+}
+
+// ===========================================
+// UTILITY FUNCTIONS FOR SAFE INTERACTIONS
+// ===========================================
+
+async function safeDeferUpdate(interaction) {
+  try {
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.deferUpdate();
+      return true;
+    }
+  } catch (error) {
+    if (error.code !== 40060 && error.code !== 10062) {
+      console.error('Error deferring interaction:', error);
+    }
+  }
+  return false;
+}
+
+async function safeReply(interaction, options) {
+  try {
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply(options);
+      return true;
+    }
+  } catch (error) {
+    if (error.code !== 40060 && error.code !== 10062) {
+      console.error('Error replying to interaction:', error);
+    }
+  }
+  return false;
+}
+
+async function safeEditReply(interaction, options) {
+  try {
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply(options);
+      return await interaction.fetchReply();
+    } else {
+      await interaction.reply(options);
+      return await interaction.fetchReply();
+    }
+  } catch (error) {
+    if (error.code !== 40060 && error.code !== 10062) {
+      console.error('Error editing reply:', error);
+    }
+    return null;
+  }
+}
+
+async function safeFollowUp(interaction, options) {
+  try {
+    await interaction.followUp(options);
+    return true;
+  } catch (error) {
+    if (error.code !== 40060 && error.code !== 10062) {
+      console.error('Error following up:', error);
+    }
+  }
+  return false;
+}
+
+async function disableButtons(interaction, actionRows) {
+  try {
+    const disabledComponents = actionRows.map(row =>
+      new ActionRowBuilder().addComponents(
+        ...row.components.map(button => 
+          ButtonBuilder.from(button).setDisabled(true)
+        )
+      )
+    );
+    
+    await interaction.editReply({ components: disabledComponents });
+  } catch (error) {
+    // Ignore errors when disabling buttons
+    console.log('Note: Could not disable buttons (interaction may have expired)');
   }
 }
