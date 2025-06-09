@@ -10,8 +10,11 @@ const {
   clearConversationHistory,
   setUserApiKey,
   getUserApiKey,
-  removeUserApiKey
+  removeUserApiKey,
+  createUserPrivacySettingsTable
 } = require('./events/database');
+
+createUserPrivacySettingsTable().catch(console.error);
 
 
 module.exports = { 

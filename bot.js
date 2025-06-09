@@ -168,6 +168,12 @@ client.login(token).catch(error => {
 
 // Handle uncaught promise rejections
 process.on('unhandledRejection', (error) => {
+  // Ignore Discord interaction already acknowledged errors
+  if (error.code === 40060 || error.code === 10062) {
+    console.log('⚠️ Interaction already acknowledged (ignored)');
+    return;
+  }
+  
   console.error('Unhandled promise rejection:', error);
   // Don't exit the process, just log the error
 });
@@ -222,3 +228,4 @@ process.on('SIGTERM', () => {
   
   process.exit(0);
 });
+

@@ -290,143 +290,351 @@ function showNotification(message, type = 'info') {
 
 // Privacy Policy content
 const privacyPolicyContent = `
+    <div class="privacy-header">
+        <p><strong>Last updated:</strong> 6/9/2025</p>
+        <p class="privacy-intro">Your privacy is our priority. This policy explains how we handle your data with maximum transparency and user control.</p>
+    </div>
+
     <div class="instance-types-privacy">
         <div class="instance-type public">
             <h3><i class="fas fa-globe"></i> Public Instance Privacy</h3>
             
-            <h4><i class="fas fa-database"></i> Data Collection</h4>
-            <p>Our public instance collects and processes the following information:</p>
-            <ul>
-                <li><strong>Message Content:</strong> To provide AI responses and maintain conversation context</li>
-                <li><strong>User IDs:</strong> To identify users and maintain personalized settings</li>
-                <li><strong>API Keys:</strong> User-provided API keys are <strong>encrypted using ChaCha20-Poly1305</strong> encryption</li>
-                <li><strong>Usage Statistics:</strong> To improve performance and detect abuse</li>
-                <li><strong>Media Files:</strong> Temporarily processed for AI analysis (not permanently stored)</li>
-                <li><strong>Server Analytics:</strong> Basic usage metrics for service improvement</li>
-            </ul>
+            <h4><i class="fas fa-database"></i> Data We Collect</h4>
+            <p>Our public instance operates on a <strong>privacy-first principle</strong>:</p>
+            
+            <div class="data-category">
+                <h5><i class="fas fa-check-circle"></i> Always Collected (Essential)</h5>
+                <ul>
+                    <li><strong>Basic Discord Data:</strong> Username, User ID, display name</li>
+                    <li><strong>Message Content:</strong> Your messages to provide AI responses</li>
+                    <li><strong>Conversation History:</strong> Previous messages for context (deletable anytime)</li>
+                    <li><strong>Media Files:</strong> Images, videos, PDFs you share (processed temporarily, not stored permanently)</li>
+                </ul>
+            </div>
 
-            <h4><i class="fas fa-shield-alt"></i> Data Security</h4>
+            <div class="data-category optional">
+                <h5><i class="fas fa-user-cog"></i> Optional Data (Your Choice)</h5>
+                <div class="privacy-setting">
+                    <div class="setting-header">
+                        <strong>🎮 Discord Presence & Activity</strong>
+                        <span class="default-status disabled">❌ DISABLED by default</span>
+                    </div>
+                    <ul>
+                        <li>Gaming status and currently playing games</li>
+                        <li>Custom status messages</li>
+                        <li>Online/offline status</li>
+                        <li>Streaming, listening, or watching activities</li>
+                    </ul>
+                    <p class="control-info"><strong>Your Control:</strong> Enable with <code>/privacy settings share_presence:true</code></p>
+                </div>
+
+                <div class="privacy-setting">
+                    <div class="setting-header">
+                        <strong>🏰 Server Information</strong>
+                        <span class="default-status enabled">✅ Basic access enabled</span>
+                    </div>
+                    <ul>
+                        <li>Your roles and permissions (for moderation features)</li>
+                        <li>Server membership status</li>
+                        <li>Administrative privileges (for bot functionality)</li>
+                    </ul>
+                    <p class="control-info"><strong>Your Control:</strong> Disable with <code>/privacy settings share_server_info:false</code></p>
+                </div>
+
+                <div class="privacy-setting">
+                    <div class="setting-header">
+                        <strong>🔐 API Keys</strong>
+                        <span class="default-status secure">🔒 Encrypted storage</span>
+                    </div>
+                    <ul>
+                        <li>Personal AI API keys (if you choose to set them)</li>
+                        <li><strong>Encryption:</strong> ChaCha20-Poly1305 military-grade encryption</li>
+                        <li><strong>Storage:</strong> Encrypted locally, never transmitted</li>
+                    </ul>
+                    <p class="control-info"><strong>Your Control:</strong> Remove anytime with <code>/apikey remove</code></p>
+                </div>
+            </div>
+
+            <h4><i class="fas fa-shield-alt"></i> Revolutionary Privacy Controls</h4>
+            <div class="privacy-controls">
+                <div class="control-item">
+                    <h5><i class="fas fa-toggle-off"></i> Default Privacy First</h5>
+                    <p>All optional data sharing is <strong>DISABLED by default</strong>. You explicitly choose what to share.</p>
+                </div>
+                
+                <div class="control-item">
+                    <h5><i class="fas fa-cog"></i> Granular Settings</h5>
+                    <p>Use <code>/privacy settings</code> to customize exactly what data you share:</p>
+                    <ul>
+                        <li><code>share_presence:true/false</code> - Gaming and activity status</li>
+                        <li><code>share_server_info:true/false</code> - Role and server information</li>
+                    </ul>
+                </div>
+                
+                <div class="control-item">
+                    <h5><i class="fas fa-eye"></i> Complete Transparency</h5>
+                    <p>Use <code>/privacy view</code> to see exactly what data is accessible to the bot at any time.</p>
+                </div>
+                
+                <div class="control-item">
+                    <h5><i class="fas fa-trash"></i> Data Deletion</h5>
+                    <p>Full control over your data:</p>
+                    <ul>
+                        <li><code>/clear</code> - Delete conversation history instantly</li>
+                        <li><code>/apikey remove</code> - Delete stored encrypted API keys</li>
+                        <li><code>/privacy settings</code> - Change sharing preferences anytime</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h4><i class="fas fa-lock"></i> Data Security</h4>
             <ul>
-                <li>All data stored on secure servers with industry-standard protection</li>
-                <li>API keys encrypted with military-grade ChaCha20-Poly1305 algorithm</li>
-                <li>Regular security audits and monitoring</li>
-                <li>Data retention policy: conversation history kept for service quality</li>
-                <li>No data sharing with third parties except AI providers (OpenAI, Google, etc.)</li>
+                <li><strong>Encryption:</strong> ChaCha20-Poly1305 (AEAD cipher) for API key protection</li>
+                <li><strong>Local Storage:</strong> All data stored on secure, monitored servers</li>
+                <li><strong>No Third-Party Sales:</strong> We never sell or share your personal data</li>
+                <li><strong>Limited Transmission:</strong> Data only sent to AI providers (OpenAI, Google, etc.) for processing</li>
+                <li><strong>Automatic Cleanup:</strong> Old conversation data periodically cleaned</li>
+                <li><strong>Industry Standards:</strong> Regular security audits and monitoring</li>
             </ul>
 
             <h4><i class="fas fa-user-shield"></i> Your Rights</h4>
             <ul>
-                <li>Request data deletion using <code>/clear-history</code> command</li>
-                <li>Remove stored API keys using <code>/api remove</code> command</li>
-                <li>Contact support for complete data removal</li>
-                <li>Opt-out of analytics collection (contact support)</li>
+                <li><strong>Data Access:</strong> View all accessible data with <code>/privacy view</code></li>
+                <li><strong>Data Control:</strong> Modify sharing settings anytime</li>
+                <li><strong>Data Deletion:</strong> Delete conversation history and API keys instantly</li>
+                <li><strong>Transparency:</strong> This policy explains exactly what we collect and why</li>
+                <li><strong>Support:</strong> Contact us anytime with privacy questions</li>
+                <li><strong>No Tracking:</strong> We don't track you across other services</li>
             </ul>
         </div>
 
         <div class="instance-type private">
             <h3><i class="fas fa-home"></i> Private Instance Privacy</h3>
             
-            <h4><i class="fas fa-database"></i> Data Collection</h4>
-            <p>Private instances provide maximum privacy and control:</p>
+            <h4><i class="fas fa-database"></i> Maximum Privacy & Control</h4>
+            <p>Private instances provide the highest level of privacy and data sovereignty:</p>
+            
+            <div class="data-category">
+                <h5><i class="fas fa-server"></i> Your Infrastructure Only</h5>
+                <ul>
+                    <li><strong>Local Storage:</strong> All data stored on your own servers/hardware</li>
+                    <li><strong>No External Transmission:</strong> Data never leaves your controlled environment</li>
+                    <li><strong>Zero Cloud Dependencies:</strong> No external databases or storage services</li>
+                    <li><strong>Air-Gapped Options:</strong> Can run completely offline if needed</li>
+                </ul>
+            </div>
+
+            <div class="data-category">
+                <h5><i class="fas fa-key"></i> Your Encryption Keys</h5>
+                <ul>
+                    <li><strong>Local Key Generation:</strong> Encryption keys generated and stored in your .env file</li>
+                    <li><strong>Same Strong Encryption:</strong> ChaCha20-Poly1305 algorithm</li>
+                    <li><strong>Your Control:</strong> You manage all encryption keys and security</li>
+                    <li><strong>No Key Sharing:</strong> Keys never transmitted or shared</li>
+                </ul>
+            </div>
+
+            <div class="data-category">
+                <h5><i class="fas fa-cog"></i> Same Privacy Features</h5>
+                <ul>
+                    <li><strong>Privacy Settings:</strong> Full <code>/privacy</code> command functionality</li>
+                    <li><strong>Default Protection:</strong> Presence sharing disabled by default</li>
+                    <li><strong>User Control:</strong> All the same privacy controls as public instance</li>
+                </ul>
+            </div>
+
+            <h4><i class="fas fa-shield-alt"></i> Enhanced Security Benefits</h4>
             <ul>
-                <li><strong>Local Storage Only:</strong> All data stored on your own servers/hardware</li>
-                <li><strong>No External Transmission:</strong> Data never leaves your infrastructure</li>
-                <li><strong>API Keys:</strong> Encrypted locally using ChaCha20-Poly1305 and stored in your .env file</li>
-                <li><strong>Zero Analytics:</strong> No usage statistics collected or transmitted</li>
-                <li><strong>Complete Control:</strong> You manage all data retention and deletion policies</li>
+                <li><strong>Data Sovereignty:</strong> Complete ownership and control of all data</li>
+                <li><strong>Compliance Ready:</strong> Meet your organization's specific security requirements</li>
+                <li><strong>Audit Trail:</strong> Full control over logging and monitoring</li>
+                <li><strong>Custom Policies:</strong> Implement your own data retention and deletion policies</li>
+                <li><strong>Zero External Dependencies:</strong> No reliance on our servers or services</li>
+                <li><strong>Incident Response:</strong> You control all security incident response procedures</li>
             </ul>
 
-            <h4><i class="fas fa-lock"></i> Enhanced Security</h4>
+            <h4><i class="fas fa-tools"></i> Administrative Control</h4>
             <ul>
-                <li>Data never leaves your controlled environment</li>
-                <li>You control all encryption keys and security measures</li>
-                <li>No external dependencies for data storage</li>
-                <li>Compliance with your organization's security policies</li>
-                <li>Full audit trail control</li>
-                <li>Air-gapped deployment options available</li>
-            </ul>
-
-            <h4><i class="fas fa-cog"></i> Your Control</h4>
-            <ul>
-                <li>Complete data ownership and sovereignty</li>
-                <li>Custom data retention policies</li>
-                <li>Local backup and recovery procedures</li>
-                <li>Integration with your existing security infrastructure</li>
-                <li>No third-party data processors involved</li>
+                <li><strong>Infrastructure Management:</strong> You control hosting, backups, and maintenance</li>
+                <li><strong>Security Configuration:</strong> Customize security settings for your environment</li>
+                <li><strong>Integration Options:</strong> Integrate with existing security and monitoring tools</li>
+                <li><strong>Custom Features:</strong> Modify bot functionality to meet specific needs</li>
+                <li><strong>Compliance Support:</strong> GDPR, HIPAA, SOC2 compliance under your control</li>
             </ul>
         </div>
     </div>
 
     <div class="privacy-comparison">
-        <h3><i class="fas fa-balance-scale"></i> Privacy Comparison</h3>
+        <h3><i class="fas fa-balance-scale"></i> Privacy Feature Comparison</h3>
         <table class="comparison-table">
             <thead>
                 <tr>
-                    <th>Privacy Aspect</th>
+                    <th>Privacy Feature</th>
                     <th><i class="fas fa-globe"></i> Public Instance</th>
                     <th><i class="fas fa-home"></i> Private Instance</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
+                    <td><strong>Default Privacy Level</strong></td>
+                    <td><span class="feature-value good">High (presence data disabled)</span></td>
+                    <td><span class="feature-value excellent">Maximum (full user control)</span></td>
+                </tr>
+                <tr>
                     <td><strong>Data Location</strong></td>
                     <td><span class="feature-value moderate">Our secure servers</span></td>
-                    <td><span class="feature-value good">Your infrastructure only</span></td>
+                    <td><span class="feature-value excellent">Your infrastructure only</span></td>
                 </tr>
                 <tr>
-                    <td><strong>Data Control</strong></td>
-                    <td><span class="feature-value moderate">Managed by us</span></td>
-                    <td><span class="feature-value good">100% your control</span></td>
+                    <td><strong>User Privacy Controls</strong></td>
+                    <td><span class="feature-value good">Full customization available</span></td>
+                    <td><span class="feature-value excellent">Full customization + admin policies</span></td>
                 </tr>
                 <tr>
-                    <td><strong>Encryption</strong></td>
-                    <td><span class="feature-value good">ChaCha20-Poly1305</span></td>
-                    <td><span class="feature-value good">ChaCha20-Poly1305 (your keys)</span></td>
+                    <td><strong>Presence Data Sharing</strong></td>
+                    <td><span class="feature-value excellent">❌ Disabled by default</span></td>
+                    <td><span class="feature-value excellent">❌ Disabled by default</span></td>
                 </tr>
                 <tr>
-                    <td><strong>Analytics</strong></td>
-                    <td><span class="feature-value moderate">Basic usage metrics</span></td>
-                    <td><span class="feature-value good">Zero analytics</span></td>
+                    <td><strong>Data Encryption</strong></td>
+                    <td><span class="feature-value good">ChaCha20-Poly1305 (our keys)</span></td>
+                    <td><span class="feature-value excellent">ChaCha20-Poly1305 (your keys)</span></td>
                 </tr>
                 <tr>
-                    <td><strong>Third-party Access</strong></td>
-                    <td><span class="feature-value moderate">AI providers only</span></td>
-                    <td><span class="feature-value good">None (direct API calls)</span></td>
+                    <td><strong>Data Portability</strong></td>
+                    <td><span class="feature-value moderate">Export conversation history</span></td>
+                    <td><span class="feature-value excellent">Complete data ownership</span></td>
                 </tr>
                 <tr>
-                    <td><strong>Compliance</strong></td>
-                    <td><span class="feature-value moderate">Our compliance standards</span></td>
-                    <td><span class="feature-value good">Your compliance requirements</span></td>
+                    <td><strong>Third-Party Access</strong></td>
+                    <td><span class="feature-value moderate">Only AI providers for processing</span></td>
+                    <td><span class="feature-value excellent">Zero third-party access</span></td>
                 </tr>
                 <tr>
-                    <td><strong>Data Deletion</strong></td>
-                    <td><span class="feature-value moderate">On request via commands</span></td>
-                    <td><span class="feature-value good">Immediate local control</span></td>
+                    <td><strong>Compliance Support</strong></td>
+                    <td><span class="feature-value good">Standard privacy practices</span></td>
+                    <td><span class="feature-value excellent">Custom compliance implementation</span></td>
                 </tr>
             </tbody>
         </table>
     </div>
 
+    <div class="privacy-settings-guide">
+        <h3><i class="fas fa-cog"></i> Privacy Settings Quick Guide</h3>
+        <div class="settings-grid">
+            <div class="setting-card">
+                <h4><i class="fas fa-eye"></i> View Your Data</h4>
+                <code>/privacy view</code>
+                <p>See exactly what data the bot can access about you right now.</p>
+            </div>
+            <div class="setting-card">
+                <h4><i class="fas fa-gamepad"></i> Gaming Status</h4>
+                <code>/privacy settings share_presence:true</code>
+                <p>Allow bot to see what games you're playing for enhanced context.</p>
+            </div>
+            <div class="setting-card">
+                <h4><i class="fas fa-user-shield"></i> Server Roles</h4>
+                <code>/privacy settings share_server_info:false</code>
+                <p>Hide your server roles and permissions from the bot.</p>
+            </div>
+            <div class="setting-card">
+                <h4><i class="fas fa-trash-alt"></i> Clear History</h4>
+                <code>/clear</code>
+                <p>Instantly delete all your conversation history with the bot.</p>
+            </div>
+        </div>
+    </div>
+
     <div class="encryption-details">
-        <h3><i class="fas fa-key"></i> Encryption Implementation</h3>
-        <p>Both instance types use the same robust encryption for API key protection:</p>
-        <ul>
-            <li><strong>Algorithm:</strong> ChaCha20-Poly1305 (AEAD cipher)</li>
-            <li><strong>Key Length:</strong> 256 bits (32 bytes)</li>
-            <li><strong>Nonce:</strong> 96 bits (12 bytes) - randomly generated per encryption</li>
-            <li><strong>Authentication:</strong> 128-bit Poly1305 authentication tag</li>
-            <li><strong>Format:</strong> <code>nonce:ciphertext:auth_tag</code> (all base64 encoded)</li>
-        </ul>
-        <p><strong>Private Instance Advantage:</strong> You control the encryption keys and can implement additional security layers.</p>
+        <h3><i class="fas fa-key"></i> Technical Security Details</h3>
+        <div class="tech-specs">
+            <div class="spec-item">
+                <h4>Encryption Algorithm</h4>
+                <p><strong>ChaCha20-Poly1305</strong> - Modern AEAD (Authenticated Encryption with Associated Data) cipher</p>
+            </div>
+            <div class="spec-item">
+                <h4>Key Specifications</h4>
+                <ul>
+                    <li><strong>Key Length:</strong> 256 bits (32 bytes)</li>
+                    <li><strong>Nonce:</strong> 96 bits (12 bytes) - randomly generated per encryption</li>
+                    <li><strong>Authentication Tag:</strong> 128-bit Poly1305 tag for data integrity</li>
+                </ul>
+            </div>
+            <div class="spec-item">
+                <h4>Storage Format</h4>
+                <p><code>nonce:ciphertext:auth_tag</code> (all components base64 encoded)</p>
+            </div>
+            <div class="spec-item">
+                <h4>Key Management</h4>
+                <p><strong>Public Instance:</strong> Keys managed securely on our servers<br>
+                <strong>Private Instance:</strong> Keys generated and stored in your .env file</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="data-retention">
+        <h3><i class="fas fa-calendar-alt"></i> Data Retention & Deletion</h3>
+        <div class="retention-policy">
+            <div class="retention-item">
+                <h4><i class="fas fa-comments"></i> Conversation History</h4>
+                <p><strong>Retention:</strong> Kept for service quality and context</p>
+                <p><strong>Your Control:</strong> Delete anytime with <code>/clear</code></p>
+                <p><strong>Automatic Cleanup:</strong> Old conversations periodically cleaned</p>
+            </div>
+            <div class="retention-item">
+                <h4><i class="fas fa-key"></i> API Keys</h4>
+                <p><strong>Retention:</strong> Until you remove them</p>
+                <p><strong>Your Control:</strong> Delete instantly with <code>/apikey remove</code></p>
+                <p><strong>Encryption:</strong> Always stored encrypted, never in plain text</p>
+            </div>
+            <div class="retention-item">
+                <h4><i class="fas fa-cog"></i> Privacy Settings</h4>
+                <p><strong>Retention:</strong> Until you change them</p>
+                <p><strong>Your Control:</strong> Modify anytime with <code>/privacy settings</code></p>
+                <p><strong>Default:</strong> Privacy-first settings applied to new users</p>
+            </div>
+        </div>
     </div>
 
     <div class="contact-section">
-        <h3><i class="fas fa-envelope"></i> Privacy Questions?</h3>
-        <p>For privacy-related questions or concerns:</p>
-        <ul>
-            <li><strong>Public Instance:</strong> Contact our support team</li>
-            <li><strong>Private Instance:</strong> You have full control - refer to your local documentation</li>
-        </ul>
+        <h3><i class="fas fa-envelope"></i> Privacy Questions & Support</h3>
+        <p>We're committed to transparency and are happy to answer any privacy-related questions:</p>
+        <div class="contact-methods">
+            <div class="contact-method">
+                <h4><i class="fab fa-discord"></i> Discord Support</h4>
+                <p>Join our <a href="https://discord.gg/pevruS26Au" target="_blank">Discord Server</a> for real-time support</p>
+            </div>
+            <div class="contact-method">
+                <h4><i class="fab fa-github"></i> GitHub Issues</h4>
+                <p>Report privacy concerns at our <a href="https://github.com/bm-hien/Iris-Discord-AI" target="_blank">GitHub Repository</a></p>
+            </div>
+            <div class="contact-method">
+                <h4><i class="fas fa-envelope"></i> Direct Contact</h4>
+                <p>Email: <a href="mailto:buiminhhien001@gmail.com">buiminhhien001@gmail.com</a></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="privacy-commitment">
+        <h3><i class="fas fa-heart"></i> Our Privacy Commitment</h3>
+        <div class="commitment-text">
+            <p><strong>We believe privacy is a fundamental right.</strong> That's why we built Iris AI Bot with privacy-first design principles:</p>
+            <ul>
+                <li>🔒 <strong>Default Privacy:</strong> All optional data sharing is disabled by default</li>
+                <li>⚙️ <strong>User Control:</strong> You decide exactly what data to share</li>
+                <li>👁️ <strong>Full Transparency:</strong> See exactly what data we can access</li>
+                <li>🗑️ <strong>Easy Deletion:</strong> Delete your data instantly, anytime</li>
+                <li>🔐 <strong>Strong Security:</strong> Military-grade encryption for sensitive data</li>
+                <li>📋 <strong>Clear Policies:</strong> No confusing legal jargon or hidden clauses</li>
+            </ul>
+            <p class="commitment-note">Your trust is earned through our actions, not just our words. We continuously work to maintain the highest privacy standards while providing excellent AI assistance.</p>
+        </div>
+    </div>
+
+    <div class="policy-footer">
+        <p><strong>Last Updated:</strong> 6/9/2025</p>
+        <p><strong>Next Review:</strong> We review this policy monthly to ensure it reflects our current practices.</p>
+        <p class="legal-note">By using Iris AI Bot, you acknowledge that you have read, understood, and agree to this Privacy Policy. Changes will be communicated through our Discord server and GitHub repository.</p>
     </div>
 `;
 

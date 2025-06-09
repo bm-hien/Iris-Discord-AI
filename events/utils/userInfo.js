@@ -3,7 +3,8 @@
  */
 const { PermissionsBitField, ChannelType, ActivityType } = require('discord.js');
 const { checkUserPermissions } = require('./permissions');
-const { getUserWarningCount } = require('../../AI/events/database');
+const { getUserWarningCount, getUserPrivacySettings } = require('../../AI/events/database');
+
 /**
  * Extract detailed server role information for AI understanding
  * @param {Guild} guild - Discord guild
@@ -462,6 +463,22 @@ function extractUserPresence(member) {
  */
 async function getUserInfo(message) {
   const user = message.author;
+  
+  // Get user privacy settings first
+  let privacySettings;
+  try {
+    privacySettings = await getUserPrivacySettings(user.id);
+  } catch (error) {
+    console.error('Error getting privacy settings:', error);
+    // Default to restrictive settings
+    privacySettings = {
+      user_id: user.id,
+      share_presence: 0,
+      share_activity: 0,
+      share_server_info: 1
+    };
+  }
+
   const userInfo = {
     username: user.username,
     tag: user.tag,
@@ -484,8 +501,8 @@ async function getUserInfo(message) {
       type: message.channel.type
     },
     channels: [], // Will contain all server channels
-    // Rich Presence information
-    presence: {
+    // Rich Presence information - only if privacy allows
+    presence: privacySettings.share_presence ? {
       status: 'unknown',
       activities: [],
       isOnline: false,
@@ -497,43 +514,58 @@ async function getUserInfo(message) {
       isPlaying: false,
       currentGame: null,
       currentApp: null
-    },
+    } : null,
     // Complete server role information
     serverRoles: null,
-    roleContext: ''
+    roleContext: '',
+    // Privacy metadata for AI context
+    privacySettings: privacySettings
   };
 
   // If message is in a guild (server), add additional context
   if (message.guild) {
     userInfo.serverName = message.guild.name;
     
-    // Get all channels in the server
+    // Get all channels in the server (always available)
     userInfo.channels = getServerChannels(message.guild);
     
     try {
-    userInfo.warningCount = await getUserWarningCount(user.id, message.guild.id);
-  } catch (error) {
-    console.error('Error getting warning count:', error);
-    userInfo.warningCount = 0;
-  }
+      userInfo.warningCount = await getUserWarningCount(user.id, message.guild.id);
+    } catch (error) {
+      console.error('Error getting warning count:', error);
+      userInfo.warningCount = 0;
+    }
     
     // Get user's member object in the guild
     const member = message.guild.members.cache.get(user.id);
     if (member) {
-      // Check if user is an admin or owner
+      // Basic info always available
       userInfo.isAdmin = member.permissions.has(PermissionsBitField.Flags.Administrator);
       userInfo.isOwner = message.guild.ownerId === user.id;
       
-      // Get user roles
-      if (member.roles.cache.size > 0) {
-        // Get roles except @everyone
-        const userRoles = member.roles.cache.filter(role => role.name !== '@everyone');
-        
-        // Store role names
-        userInfo.roles = userRoles.map(role => role.name).join(', ');
-        
-        // Add detailed role analysis
-        userInfo.roleAnalysis = getRoleAnalysis(member, message.guild);
+      // Server info only if privacy allows
+      if (privacySettings.share_server_info) {
+        // Get user roles
+        if (member.roles.cache.size > 0) {
+          const userRoles = member.roles.cache.filter(role => role.name !== '@everyone');
+          userInfo.roles = userRoles.map(role => role.name).join(', ');
+          userInfo.roleAnalysis = getRoleAnalysis(member, message.guild);
+          
+          // Get highest and lowest role positions for hierarchy checks
+          if (userRoles.size > 0) {
+            const highestRole = member.roles.highest;
+            const lowestRole = Array.from(userRoles.values()).reduce((lowest, role) => 
+              role.position < lowest.position ? role : lowest
+            );
+            
+            userInfo.highestRole = highestRole.name;
+            userInfo.lowestRole = lowestRole.name;
+            userInfo.rolePositions = {
+              highest: highestRole.position,
+              lowest: lowestRole.position
+            };
+          }
+        }
         
         // Add bot's capabilities in this server
         const botMember = message.guild.members.cache.get(message.client.user.id);
@@ -548,51 +580,38 @@ async function getUserInfo(message) {
             canModerateMembers: botMember.permissions.has(PermissionsBitField.Flags.ModerateMembers)
           };
         }
-        
-        // Get highest and lowest role positions for hierarchy checks
-        if (userRoles.size > 0) {
-          const highestRole = member.roles.highest;
-          const lowestRole = Array.from(userRoles.values()).reduce((lowest, role) => 
-            role.position < lowest.position ? role : lowest
-          );
-          
-          userInfo.highestRole = highestRole.name;
-          userInfo.lowestRole = lowestRole.name;
-          userInfo.rolePositions = {
-            highest: highestRole.position,
-            lowest: lowestRole.position
-          };
-        }
+
+        // Use the permission checking function to get accurate permissions
+        userInfo.permissions = checkUserPermissions(member);
+        userInfo.hasPermissions = userInfo.permissions.length > 0;
+
+        // Get complete server role information
+        userInfo.serverRoles = getServerRoleInformation(message.guild, member);
+        userInfo.roleContext = formatRoleContext(userInfo.serverRoles);
       }
       
-      // Use the permission checking function to get accurate permissions
-      userInfo.permissions = checkUserPermissions(member);
-      
-      // Set hasPermissions flag for clear AI instructions
-      userInfo.hasPermissions = userInfo.permissions.length > 0;
-      
-      // Extract Rich Presence information
-      userInfo.presence = extractUserPresence(member);
-
-      // Get complete server role information
-      userInfo.serverRoles = getServerRoleInformation(message.guild, member);
-      userInfo.roleContext = formatRoleContext(userInfo.serverRoles);
+      // Extract Rich Presence information only if privacy allows
+      if (privacySettings.share_presence && userInfo.presence) {
+        userInfo.presence = extractUserPresence(member);
+      }
     }
   } else {
-    // For DM channels, try to get presence from client cache
-    const client = message.client;
-    const userFromCache = client.users.cache.get(user.id);
-    if (userFromCache) {
-      // Get presence from any mutual guild
-      const mutualGuilds = client.guilds.cache.filter(guild => 
-        guild.members.cache.has(user.id)
-      );
-      
-      if (mutualGuilds.size > 0) {
-        const firstMutualGuild = mutualGuilds.first();
-        const member = firstMutualGuild.members.cache.get(user.id);
-        if (member) {
-          userInfo.presence = extractUserPresence(member);
+    // For DM channels, try to get presence from client cache only if privacy allows
+    if (privacySettings.share_presence && userInfo.presence) {
+      const client = message.client;
+      const userFromCache = client.users.cache.get(user.id);
+      if (userFromCache) {
+        // Get presence from any mutual guild
+        const mutualGuilds = client.guilds.cache.filter(guild => 
+          guild.members.cache.has(user.id)
+        );
+        
+        if (mutualGuilds.size > 0) {
+          const firstMutualGuild = mutualGuilds.first();
+          const member = firstMutualGuild.members.cache.get(user.id);
+          if (member) {
+            userInfo.presence = extractUserPresence(member);
+          }
         }
       }
     }

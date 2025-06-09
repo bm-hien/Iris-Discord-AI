@@ -965,6 +965,86 @@ async function clearAutoModerationRules(guildId) {
   }
 }
 
+/**
+ * Create user privacy settings table
+ */
+function createUserPrivacySettingsTable() {
+  return new Promise((resolve, reject) => {
+    db.run(`
+      CREATE TABLE IF NOT EXISTS user_privacy_settings (
+        user_id TEXT PRIMARY KEY,
+        share_presence INTEGER DEFAULT 0,
+        share_activity INTEGER DEFAULT 0,
+        share_server_info INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `, (err) => {
+      if (err) {
+        console.error('Error creating user_privacy_settings table:', err);
+        reject(err);
+      } else {
+        console.log('User privacy settings table ready');
+        resolve();
+      }
+    });
+  });
+}
+
+/**
+ * Get user privacy settings
+ */
+async function getUserPrivacySettings(userId) {
+  return new Promise((resolve, reject) => {
+    db.get(
+      'SELECT * FROM user_privacy_settings WHERE user_id = ?',
+      [userId],
+      (err, row) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        // Default privacy settings (restrictive by default)
+        resolve(row || {
+          user_id: userId,
+          share_presence: 0,
+          share_activity: 0,
+          share_server_info: 1
+        });
+      }
+    );
+  });
+}
+
+/**
+ * Update user privacy settings
+ */
+async function updateUserPrivacySettings(userId, settings) {
+  return new Promise((resolve, reject) => {
+    const { share_presence, share_activity, share_server_info } = settings;
+    
+    db.run(`
+      INSERT INTO user_privacy_settings (user_id, share_presence, share_activity, share_server_info, updated_at)
+      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(user_id) DO UPDATE SET
+        share_presence = COALESCE(?, share_presence),
+        share_activity = COALESCE(?, share_activity),
+        share_server_info = COALESCE(?, share_server_info),
+        updated_at = CURRENT_TIMESTAMP
+    `, [
+      userId, 
+      share_presence, share_activity, share_server_info,
+      share_presence, share_activity, share_server_info
+    ], function(err) {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(true);
+    });
+  });
+}
+
 // Close database connection when Node.js process exits
 process.on('exit', () => {
   db.close();
@@ -1000,5 +1080,8 @@ module.exports = {
   getAutoModerationRules,
   setAutoModerationRule,
   removeAutoModerationRule,
-  clearAutoModerationRules
+  clearAutoModerationRules,
+  createUserPrivacySettingsTable,
+  getUserPrivacySettings,
+  updateUserPrivacySettings
 };

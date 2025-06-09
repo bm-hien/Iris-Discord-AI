@@ -187,8 +187,24 @@ async function generateResponse(userMessage, userId, userInfo = {}, imageAttachm
       apiKeyStatusText = `- API Key: User does NOT have personal API key (using default key)\n`;
     }
 
+    // Create privacy-aware context
+    let privacyContextText = '';
+    if (userInfo.privacySettings) {
+      const settings = userInfo.privacySettings;
+      privacyContextText = `\n- Privacy Settings: Presence sharing ${settings.share_presence ? 'ENABLED' : 'DISABLED'}, `;
+      privacyContextText += `Server info sharing ${settings.share_server_info ? 'ENABLED' : 'DISABLED'}`;
+      
+      if (!settings.share_presence) {
+        privacyContextText += `\n- Note: User chose to keep presence/activity data private`;
+      }
+      if (!settings.share_server_info) {
+        privacyContextText += `\n- Note: User chose to keep server role data private`;
+      }
+    }
+
     let presenceText = '';
-    if (userInfo.presence) {
+    // Only show presence if privacy allows and data exists
+    if (userInfo.presence && userInfo.privacySettings?.share_presence) {
       const presence = userInfo.presence;
       presenceText = `- Status: ${presence.statusText || 'Unknown'}`;
       
@@ -247,6 +263,8 @@ async function generateResponse(userMessage, userId, userInfo = {}, imageAttachm
       }
       
       presenceText += '\n';
+    } else if (!userInfo.privacySettings?.share_presence) {
+      presenceText = `- Presence: User has chosen to keep activity data private\n`;
     }
 
     const warningInfoText = userInfo.warningCount !== undefined ? 
@@ -279,14 +297,15 @@ User Information:
 ${channelInfoText}
 ${userInfo.isAdmin ? '- User is a server administrator' : '- User is NOT a server administrator'}
 ${userInfo.isOwner ? '- User is the server owner' : '- User is NOT the server owner'}
-${userInfo.roles ? `- Roles: ${userInfo.roles}` : '- Roles: None'}
+${userInfo.roles && userInfo.privacySettings?.share_server_info ? `- Roles: ${userInfo.roles}` : '- Roles: Privacy protected'}
 ${userRolesText}
 ${userPermissionsText}
 ${apiKeyStatusText}
 ${presenceText}
 ${urlContextText}
-${roleContextText}
+${userInfo.privacySettings?.share_server_info ? roleContextText : '- Server role data: Privacy protected'}
 ${warningInfoText}
+${privacyContextText}
 
 Current AI Provider and Model Information:
 - Provider: ${userProvider}

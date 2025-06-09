@@ -1008,6 +1008,11 @@ html {
     color: #f39c12;
 }
 
+.feature-value.excellent {
+    background: rgba(155, 89, 182, 0.2);
+    color: #9b59b6;
+}
+
 /* Privacy Policy & Terms Enhancements */
 .instance-info {
     display: grid;
@@ -1170,3 +1175,4 @@ html {
         padding: 0.75rem 0.5rem;
     }
 }
+
